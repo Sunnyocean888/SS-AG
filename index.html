@@ -233,7 +233,7 @@
             apiConfig: { baseId: '', apiKey: '' }
         };
 
-        // Airtable API functions
+        // Airtable API functions with better error handling
         async function makeAirtableRequest(tableName, params = {}) {
             const baseId = document.getElementById('baseId').value;
             const apiKey = document.getElementById('apiKey').value;
@@ -244,18 +244,26 @@
             }
             
             const queryString = new URLSearchParams(params).toString();
-            const url = `https://api.airtable.com/v0/${baseId}/${tableName}${queryString ? '?' + queryString : ''}`;
+            const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}${queryString ? '?' + queryString : ''}`;
             
             try {
                 const response = await fetch(url, {
+                    method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${apiKey}`,
                         'Content-Type': 'application/json'
-                    }
+                    },
+                    mode: 'cors'
                 });
                 
                 if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    if (response.status === 403) {
+                        throw new Error(`Access Forbidden (403): Check your API token permissions. Make sure the token has 'data.records:read' and 'schema.bases:read' scopes, and access to base ${baseId}`);
+                    } else if (response.status === 404) {
+                        throw new Error(`Table '${tableName}' not found (404): Check your table name`);
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
                 }
                 
                 return await response.json();
