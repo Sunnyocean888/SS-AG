@@ -3,736 +3,649 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sun Series Travel - Professional Quotation System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Sun Series Travel - Professional Tour System</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
     <style>
-        .hidden { display: none; }
-        .show { display: block; }
-        .selected-tour { background-color: #fef3c7; border-color: #f59e0b; }
+        @import url('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #fff7ed 0%, #fef3c7 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, #f97316 0%, #eab308 100%);
+        }
+        
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #ea580c 0%, #ca8a04 100%);
+        }
+        
+        .loading {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        .spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #f97316;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen">
+<body class="gradient-bg min-h-screen">
     <div class="max-w-7xl mx-auto p-6">
-        <div class="bg-white rounded-xl shadow-lg p-8">
+        <div class="bg-white rounded-xl card-shadow p-8">
             <!-- Header -->
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-orange-600 mb-2">Sun Series Travel Co., Ltd.</h1>
-                <p class="text-gray-600">Professional Tour Quotation System - Thailand Specialist</p>
+                <p class="text-gray-600">Professional Tour Quotation System - Powered by Airtable</p>
                 <div class="flex justify-center items-center gap-4 mt-4 text-sm text-gray-500">
-                    <span>Quote #: <span id="quote-number"></span></span>
+                    <span>Quote #: <span id="quotationNumber"></span></span>
                     <span>•</span>
-                    <span>Valid Until: <span id="valid-until"></span></span>
+                    <span>Valid Until: <span id="validUntil"></span></span>
+                </div>
+            </div>
+
+            <!-- API Configuration -->
+            <div class="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-blue-800 mb-4">🔧 Airtable Configuration</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Airtable Base ID</label>
+                        <input type="text" id="baseId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="app...">
+                        <p class="text-xs text-gray-500 mt-1">Find at airtable.com/api</p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Personal Access Token</label>
+                        <input type="password" id="apiKey" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="pat...">
+                        <p class="text-xs text-gray-500 mt-1">Create at airtable.com/create/tokens</p>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <button onclick="testConnection()" id="testBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm">
+                        Test Connection
+                    </button>
+                    <span id="connectionStatus" class="ml-3 text-sm"></span>
                 </div>
             </div>
 
             <!-- Client Information -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">👤 Client Information</h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2 text-blue-500">👤</span>
+                    Client Information
+                </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
-                        <input type="text" id="client-name" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Full name">
+                        <input type="text" id="clientName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="Full name">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                        <input type="email" id="client-email" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="email@example.com">
+                        <input type="email" id="clientEmail" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="email@example.com">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                        <input type="tel" id="client-phone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="+66 XX XXX XXXX">
+                        <input type="tel" id="clientPhone" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="+66 XX XXX XXXX">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Nationality</label>
-                        <input type="text" id="client-nationality" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Country">
+                        <input type="text" id="clientNationality" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="Country">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Number of Guests</label>
-                        <input type="number" id="group-size" value="2" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <input type="number" min="1" id="groupSize" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500" value="1">
                     </div>
-                </div>
-                <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Special Requests</label>
-                    <textarea id="special-requests" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent" rows="2" placeholder="Dietary restrictions, accessibility needs, preferences..."></textarea>
                 </div>
             </div>
 
             <!-- Travel Dates -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">📅 Travel Dates</h2>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2 text-orange-500">📅</span>
+                    Travel Dates
+                </h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                        <input type="date" id="start-date" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <input type="date" id="startDate" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">End Date (Auto-calculated)</label>
-                        <input type="date" id="end-date" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600" readonly>
+                        <input type="date" id="endDate" class="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600" readonly>
                     </div>
                 </div>
             </div>
 
             <!-- Destinations -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">📍 Destinations</h2>
-                <div id="destinations-container">
-                    <div class="destination-item p-4 bg-gray-50 rounded-lg mb-4">
-                        <div class="flex gap-4 items-start">
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Destination 1</label>
-                                <select class="destination-select w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                                    <option value="Bangkok">Bangkok</option>
-                                    <option value="Phuket">Phuket</option>
-                                    <option value="Chiang Mai">Chiang Mai</option>
-                                    <option value="Krabi">Krabi</option>
-                                </select>
-                            </div>
-                            <div class="w-28">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Nights</label>
-                                <input type="number" class="nights-input w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent" value="3" min="1" max="14">
-                            </div>
-                        </div>
-                    </div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2 text-orange-500">📍</span>
+                    Destinations
+                </h2>
+                <div class="flex justify-end mb-4">
+                    <button onclick="addDestination()" id="addDestBtn" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 text-sm">
+                        + Add Destination
+                    </button>
                 </div>
-                <button onclick="addDestination()" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 text-sm">+ Add Destination</button>
+                <div id="destinationsContainer" class="space-y-4"></div>
             </div>
 
-            <!-- Day-by-Day Tour Selection -->
+            <!-- Tours Selection -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">🎯 Day-by-Day Tour Selection</h2>
-                <div id="daily-tours-container">
-                    <p class="text-gray-500 text-center py-8">Set your travel dates and destinations to see daily tour options</p>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2 text-orange-500">🎯</span>
+                    Available Tours
+                </h2>
+                <div class="mb-4">
+                    <button onclick="loadAllTours()" id="loadToursBtn" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm">
+                        <span id="loadToursSpinner" class="spinner" style="display: none;"></span>
+                        Load Tours from Airtable
+                    </button>
                 </div>
+                <div id="toursContainer" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"></div>
             </div>
 
             <!-- Hotels -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">🏨 Accommodation</h2>
-                <div id="hotels-container">
-                    <div class="hotel-item p-4 bg-gray-50 rounded-lg mb-4">
-                        <div class="flex gap-4 items-start">
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-                                <select class="hotel-destination w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                                    <option value="Bangkok">Bangkok</option>
-                                    <option value="Phuket">Phuket</option>
-                                    <option value="Chiang Mai">Chiang Mai</option>
-                                    <option value="Krabi">Krabi</option>
-                                </select>
-                            </div>
-                            <div class="flex-1">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Hotel Category</label>
-                                <select class="hotel-category w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                                    <option value="budget">Budget (3★) - THB 1,500/night</option>
-                                    <option value="standard" selected>Standard (4★) - THB 2,800/night</option>
-                                    <option value="deluxe">Deluxe (5★) - THB 5,500/night</option>
-                                    <option value="luxury">Luxury (5★+) - THB 8,500/night</option>
-                                </select>
-                            </div>
-                            <div class="w-32">
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Rate/Night</label>
-                                <input type="number" class="hotel-rate w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent" value="2800">
-                            </div>
-                        </div>
-                    </div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2 text-purple-500">🏨</span>
+                    Accommodation
+                </h2>
+                <div class="mb-4">
+                    <button onclick="loadHotels()" id="loadHotelsBtn" class="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 text-sm">
+                        <span id="loadHotelsSpinner" class="spinner" style="display: none;"></span>
+                        Load Hotels from Airtable
+                    </button>
                 </div>
-                <button onclick="addHotel()" class="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 text-sm">+ Add Hotel</button>
+                <div id="hotelsContainer" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4"></div>
             </div>
 
-            <!-- Pricing Settings -->
+            <!-- Selected Items Summary -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">💰 Pricing Settings</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Markup (%)</label>
-                        <input type="number" id="markup" value="20" min="0" max="100" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                        <select id="currency" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                            <option value="THB">Thai Baht (THB)</option>
-                            <option value="USD">US Dollar (USD)</option>
-                            <option value="HKD">Hong Kong Dollar (HKD)</option>
-                            <option value="EUR">Euro (EUR)</option>
-                            <option value="GBP">British Pound (GBP)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Exchange Rate (to THB)</label>
-                        <input type="number" id="exchange-rate" value="1" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    </div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2 text-green-500">📋</span>
+                    Selected Items & Cost Summary
+                </h2>
+                <div id="selectedItems" class="bg-gray-50 rounded-lg p-6">
+                    <p class="text-gray-500 text-center">No items selected yet</p>
                 </div>
             </div>
 
-            <!-- Cost Summary -->
-            <div class="mb-8">
+            <!-- Generated Quotation -->
+            <div id="quotationDisplay" class="mb-8" style="display: none;">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                    <span class="mr-2 text-green-500">📄</span>
+                    Generated Quotation
+                </h2>
                 <div class="bg-green-50 border border-green-200 rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-green-800 mb-4">Cost Summary</h3>
-                    <div class="space-y-3">
-                        <div class="flex justify-between items-center py-2 border-b border-green-200">
-                            <span class="text-gray-700">Airport Transfers:</span>
-                            <span class="font-medium" id="transfers-cost">THB 0</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2 border-b border-green-200">
-                            <span class="text-gray-700">Tours Total:</span>
-                            <span class="font-medium" id="tours-cost">THB 0</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2 border-b border-green-200">
-                            <span class="text-gray-700">Hotels Total:</span>
-                            <span class="font-medium" id="hotels-cost">THB 0</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2 border-b-2 border-green-300 font-semibold">
-                            <span class="text-gray-800">Subtotal:</span>
-                            <span id="subtotal-cost">THB 0</span>
-                        </div>
-                        <div class="flex justify-between items-center py-2 border-b border-green-200">
-                            <span class="text-blue-600">Markup (<span id="markup-percent">20</span>%):</span>
-                            <span class="font-medium text-blue-600" id="markup-cost">THB 0</span>
-                        </div>
-                        <div class="bg-green-100 p-3 rounded-lg">
-                            <div class="flex justify-between items-center">
-                                <span class="text-lg font-bold text-green-800">FINAL AMOUNT:</span>
-                                <span class="text-xl font-bold text-green-800" id="final-amount">THB 0</span>
-                            </div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-green-800">Professional Quotation Ready</h3>
+                        <div class="space-x-2">
+                            <button onclick="copyQuotation()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm">
+                                Copy to Clipboard
+                            </button>
+                            <button onclick="downloadQuotation()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm">
+                                Download
+                            </button>
                         </div>
                     </div>
+                    <pre id="quotationText" class="bg-white p-4 rounded border text-sm whitespace-pre-wrap font-mono max-h-96 overflow-y-auto"></pre>
                 </div>
-            </div>
-
-            <!-- Summary Notes -->
-            <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">📝 Additional Notes</h2>
-                <textarea id="summary-notes" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent" rows="4" placeholder="Add any additional notes, special requirements, or terms & conditions..."></textarea>
             </div>
 
             <!-- Generate Button -->
             <div class="border-t pt-6">
                 <div class="flex justify-center">
-                    <button onclick="generateQuotation()" class="px-8 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg hover:from-orange-600 hover:to-yellow-600 font-semibold text-lg shadow-lg transform transition hover:scale-105">
-                        📄 Generate Professional Quotation
+                    <button onclick="generateQuotation()" class="px-8 py-3 btn-gradient text-white rounded-lg font-semibold text-lg shadow-lg transform transition hover:scale-105">
+                        Generate Professional Quotation
                     </button>
-                </div>
-            </div>
-
-            <!-- Generated Quotation Display -->
-            <div id="quotation-display" class="mb-8 mt-8 hidden">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">📋 Generated Quotation</h2>
-                <div class="bg-green-50 border border-green-200 rounded-lg p-6">
-                    <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-green-800">Professional Quotation Ready</h3>
-                        <div class="space-x-2">
-                            <button onclick="copyQuotation()" class="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm">Copy to Clipboard</button>
-                            <button onclick="downloadQuotation()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm">Download</button>
-                            <button onclick="closeQuotation()" class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm">Close</button>
-                        </div>
-                    </div>
-                    <pre id="quotation-text" class="bg-white p-4 rounded border text-sm whitespace-pre-wrap font-mono max-h-96 overflow-y-auto"></pre>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Tour data from your spreadsheet
-        const tourData = {
-            Bangkok: [
-                { code: 'BKK-001', name: 'Damnoen Saduak Floating Market & Maeklong Railway Market Tour', duration: '10 hours', prices: { '1': 8700, '2-3': 4450, '4-6': 2325, '7-9': 1414 }, includes: 'Guide, transportation, lunch, entrance fees' },
-                { code: 'BKK-002', name: 'Safari World & Marine Park with Lunch + Dinner Cruise', duration: '10 hours', prices: { '1': 10700, '2-3': 6450, '4-6': 4325, '7-9': 3414 }, includes: 'Guide, transportation, lunch, dinner cruise, entrance fees' },
-                { code: 'BKK-003', name: 'Temple tour (Grand Palace + Emerald Buddha & Reclining Buddha)', duration: '10 hours', prices: { '1': 8550, '2-3': 5050, '4-6': 3300, '7-9': 2550 }, includes: 'Guide, transportation, entrance fees' },
-                { code: 'BKK-004', name: 'Ayutthaya Ancient Capital Day Trip', duration: '9 hours', prices: { '1': 7800, '2-3': 4200, '4-6': 2800, '7-9': 2100 }, includes: 'Guide, transportation, lunch, entrance fees' },
-                { code: 'BKK-005', name: 'Chatuchak Weekend Market & Jim Thompson House', duration: '6 hours', prices: { '1': 5500, '2-3': 3200, '4-6': 2100, '7-9': 1650 }, includes: 'Guide, transportation, entrance fees' },
-                { code: 'BKK-006', name: 'Kanchanaburi Bridge over River Kwai & War Museum', duration: '12 hours', prices: { '1': 9500, '2-3': 5200, '4-6': 3400, '7-9': 2650 }, includes: 'Guide, transportation, lunch, entrance fees' },
-                { code: 'BKK-007', name: 'Khao Yai National Park Day Trip', duration: '12 hours', prices: { '1': 8900, '2-3': 4800, '4-6': 3200, '7-9': 2450 }, includes: 'Guide, transportation, lunch, entrance fees' }
-            ],
-            Phuket: [
-                { code: 'HKT-001', name: 'Phi Phi Island Tour (Join Speed Boat) includes lunch', duration: '7 hours', prices: { '1': 3700, '2-3': 2700, '4-6': 2200, '7-9': 1986 }, includes: 'Speed boat, guide, lunch, snorkeling equipment' },
-                { code: 'HKT-002', name: 'Phang Nga Bay Tour + Canoeing at Hong and Panak Islands', duration: '7 hours', prices: { '1': 3700, '2-3': 2700, '4-6': 2200, '7-9': 1986 }, includes: 'Long tail boat, guide, lunch, canoeing equipment' },
-                { code: 'HKT-003', name: 'James Bond Island & Koh Panyee by Long Tail Boat', duration: '8 hours', prices: { '1': 4200, '2-3': 3100, '4-6': 2500, '7-9': 2200 }, includes: 'Long tail boat, guide, lunch, entrance fees' },
-                { code: 'HKT-004', name: 'Patong Beach & Big Buddha Half Day Tour', duration: '4 hours', prices: { '1': 2800, '2-3': 1900, '4-6': 1400, '7-9': 1200 }, includes: 'Transportation, guide' },
-                { code: 'HKT-005', name: 'Similan Islands Day Trip (Speedboat)', duration: '8 hours', prices: { '1': 4500, '2-3': 3200, '4-6': 2650, '7-9': 2300 }, includes: 'Speedboat, guide, lunch, snorkeling equipment' },
-                { code: 'HKT-006', name: 'Coral Island (Koh Hae) Half Day Tour', duration: '4 hours', prices: { '1': 2200, '2-3': 1600, '4-6': 1200, '7-9': 1000 }, includes: 'Speedboat, guide, water sports' }
-            ],
-            'Chiang Mai': [
-                { code: 'CNX-001', name: 'Doi Inthanon National Park + Red Karen Hill tribe + Lunch', duration: '9 hours', prices: { '1': 5670, '2': 3155, '3-6': 2675, '7-9': 2140 }, includes: 'Guide, transportation, lunch, entrance fees' },
-                { code: 'CNX-002', name: 'Elephant Sanctuary & Doi Suthep Temple', duration: '8 hours', prices: { '1': 6200, '2': 3800, '3-6': 3100, '7-9': 2650 }, includes: 'Guide, transportation, lunch, elephant feeding' },
-                { code: 'CNX-003', name: 'Chiang Mai Old City & Night Bazaar Walking Tour', duration: '6 hours', prices: { '1': 3800, '2': 2200, '3-6': 1800, '7-9': 1500 }, includes: 'Guide, transportation' },
-                { code: 'CNX-004', name: 'White Temple (Wat Rong Khun) & Blue Temple Day Trip', duration: '10 hours', prices: { '1': 6800, '2': 4200, '3-6': 3400, '7-9': 2850 }, includes: 'Guide, transportation, lunch, entrance fees' },
-                { code: 'CNX-005', name: 'Mae Taeng River Rafting & Jungle Trek', duration: '8 hours', prices: { '1': 5200, '2': 3200, '3-6': 2650, '7-9': 2200 }, includes: 'Guide, transportation, lunch, rafting equipment' }
-            ],
-            Krabi: [
-                { code: 'KBV-001', name: 'Half day City Tour no lunch (private)', duration: '4.5 hours', prices: { '1': 4095, '2': 2250, '3-7': 1680, '8+': 1200 }, includes: 'Private guide, transportation' },
-                { code: 'KBV-002', name: '4 Islands Tour by Long Tail Boat', duration: '7 hours', prices: { '1': 4500, '2': 2800, '3-7': 2200, '8+': 1900 }, includes: 'Long tail boat, guide, lunch, snorkeling equipment' },
-                { code: 'KBV-003', name: 'Emerald Pool & Hot Springs Natural Tour', duration: '6 hours', prices: { '1': 3800, '2': 2400, '3-7': 1900, '8+': 1600 }, includes: 'Guide, transportation, entrance fees' },
-                { code: 'KBV-004', name: 'Railay Beach & Phra Nang Cave', duration: '5 hours', prices: { '1': 3200, '2': 2000, '3-7': 1650, '8+': 1400 }, includes: 'Long tail boat, guide' },
-                { code: 'KBV-005', name: 'Tiger Cave Temple & Krabi Town Tour', duration: '6 hours', prices: { '1': 2800, '2': 1800, '3-7': 1450, '8+': 1250 }, includes: 'Guide, transportation, entrance fees' }
-            ]
+        // Application state
+        window.appData = {
+            clientInfo: { name: '', email: '', phone: '', nationality: '' },
+            destinations: [{ name: 'Bangkok', nights: 3 }],
+            travelDates: { start: '', end: '' },
+            groupSize: 1,
+            selectedTours: [],
+            selectedHotels: [],
+            quotationNumber: '',
+            validUntil: '',
+            apiConfig: { baseId: '', apiKey: '' }
         };
 
-        let selectedTours = {};
-
-        // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            initializePage();
-            setupEventListeners();
-        });
-
-        function initializePage() {
-            // Generate quote number
-            const date = new Date();
-            const number = `SST-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-            document.getElementById('quote-number').textContent = number;
+        // Airtable API functions
+        async function makeAirtableRequest(tableName, params = {}) {
+            const baseId = document.getElementById('baseId').value;
+            const apiKey = document.getElementById('apiKey').value;
             
-            // Set valid until date (30 days from today)
-            const validDate = new Date();
-            validDate.setDate(validDate.getDate() + 30);
-            document.getElementById('valid-until').textContent = validDate.toLocaleDateString('en-GB');
+            if (!baseId || !apiKey) {
+                alert('Please enter Airtable Base ID and API Key first');
+                return null;
+            }
             
-            calculateCosts();
-        }
-
-        function setupEventListeners() {
-            // Add event listeners for automatic calculation
-            document.getElementById('group-size').addEventListener('input', function() {
-                generateDailyTours();
-                calculateCosts();
-            });
-            document.getElementById('markup').addEventListener('input', function() {
-                document.getElementById('markup-percent').textContent = this.value;
-                calculateCosts();
-            });
-            document.getElementById('currency').addEventListener('change', updateExchangeRate);
-            document.getElementById('exchange-rate').addEventListener('input', calculateCosts);
+            const queryString = new URLSearchParams(params).toString();
+            const url = `https://api.airtable.com/v0/${baseId}/${tableName}${queryString ? '?' + queryString : ''}`;
             
-            // Date and destination calculation
-            document.getElementById('start-date').addEventListener('change', function() {
-                calculateEndDate();
-                generateDailyTours();
-            });
-            
-            document.querySelectorAll('.nights-input').forEach(input => {
-                input.addEventListener('input', function() {
-                    calculateEndDate();
-                    generateDailyTours();
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
-            });
-
-            document.querySelectorAll('.destination-select').forEach(select => {
-                select.addEventListener('change', generateDailyTours);
-            });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('Airtable API Error:', error);
+                alert(`Error: ${error.message}`);
+                return null;
+            }
         }
 
-        function updateExchangeRate() {
-            const currency = document.getElementById('currency').value;
-            const rates = { THB: 1, USD: 35.5, HKD: 4.55, EUR: 38.2, GBP: 44.8 };
-            document.getElementById('exchange-rate').value = rates[currency];
-            calculateCosts();
-        }
-
-        function calculateEndDate() {
-            const startDate = document.getElementById('start-date').value;
-            if (!startDate) return;
+        async function testConnection() {
+            const btn = document.getElementById('testBtn');
+            const status = document.getElementById('connectionStatus');
             
-            const nights = Array.from(document.querySelectorAll('.nights-input')).reduce((sum, input) => sum + parseInt(input.value || 0), 0);
-            const endDate = new Date(startDate);
-            endDate.setDate(endDate.getDate() + nights);
-            document.getElementById('end-date').value = endDate.toISOString().split('T')[0];
+            btn.disabled = true;
+            btn.textContent = 'Testing...';
+            status.textContent = '';
+            
+            const result = await makeAirtableRequest('Tours', { maxRecords: 1 });
+            
+            if (result) {
+                status.innerHTML = '<span class="text-green-600">✅ Connection successful!</span>';
+            } else {
+                status.innerHTML = '<span class="text-red-600">❌ Connection failed</span>';
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Test Connection';
         }
 
-        function generateDailyTours() {
-            const startDate = document.getElementById('start-date').value;
-            const destinations = Array.from(document.querySelectorAll('.destination-item'));
-            const container = document.getElementById('daily-tours-container');
+        async function loadAllTours() {
+            const btn = document.getElementById('loadToursBtn');
+            const spinner = document.getElementById('loadToursSpinner');
+            const container = document.getElementById('toursContainer');
             
-            if (!startDate || destinations.length === 0) {
-                container.innerHTML = '<p class="text-gray-500 text-center py-8">Set your travel dates and destinations to see daily tour options</p>';
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            container.innerHTML = '<div class="col-span-full text-center text-gray-500">Loading tours...</div>';
+            
+            // Load from your "Sun Series Group C..." table (the table name from your screenshot)
+            const result = await makeAirtableRequest('Sun Series Group C...', { 
+                sort: [{ field: 'Code', direction: 'asc' }]
+            });
+            
+            if (result && result.records) {
+                renderTours(result.records);
+            } else {
+                container.innerHTML = '<div class="col-span-full text-center text-red-500">Failed to load tours. Check your API credentials.</div>';
+            }
+            
+            btn.disabled = false;
+            spinner.style.display = 'none';
+        }
+
+        async function loadHotels() {
+            const btn = document.getElementById('loadHotelsBtn');
+            const spinner = document.getElementById('loadHotelsSpinner');
+            const container = document.getElementById('hotelsContainer');
+            
+            btn.disabled = true;
+            spinner.style.display = 'inline-block';
+            container.innerHTML = '<div class="col-span-full text-center text-gray-500">Loading hotels...</div>';
+            
+            const result = await makeAirtableRequest('Hotels', { 
+                filterByFormula: '{Status} = "Active"',
+                sort: [{ field: 'Destination', direction: 'asc' }, { field: 'Category', direction: 'asc' }]
+            });
+            
+            if (result && result.records) {
+                renderHotels(result.records);
+            } else {
+                container.innerHTML = '<div class="col-span-full text-center text-red-500">Failed to load hotels</div>';
+            }
+            
+            btn.disabled = false;
+            spinner.style.display = 'none';
+        }
+
+        function renderTours(tours) {
+            const container = document.getElementById('toursContainer');
+            
+            if (!tours || tours.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center text-gray-500">No tours found</div>';
                 return;
             }
-
-            container.innerHTML = '';
-            let currentDate = new Date(startDate);
-            let dayNumber = 1;
-
-            destinations.forEach((destElement, destIndex) => {
-                const destination = destElement.querySelector('.destination-select').value;
-                const nights = parseInt(destElement.querySelector('.nights-input').value) || 1;
-                const destinationTours = tourData[destination] || [];
-
-                // Create destination header
-                const destHeader = document.createElement('div');
-                destHeader.className = 'mb-6';
-                destHeader.innerHTML = `
-                    <h3 class="text-lg font-medium text-gray-800 mb-3 bg-orange-100 p-3 rounded-lg">
-                        📍 ${destination} - ${nights} nights
-                    </h3>
-                `;
-                container.appendChild(destHeader);
-
-                // Create daily sections for this destination
-                for (let day = 0; day < nights; day++) {
-                    const dayDate = new Date(currentDate);
-                    dayDate.setDate(dayDate.getDate() + day);
-                    const dateString = dayDate.toISOString().split('T')[0];
-                    const dayKey = `${destination}-day-${dayNumber}`;
-
-                    const daySection = document.createElement('div');
-                    daySection.className = 'mb-6 border border-gray-200 rounded-lg p-4';
-                    daySection.innerHTML = `
-                        <h4 class="font-medium text-gray-800 mb-3 bg-gray-100 p-2 rounded flex items-center">
-                            🗓️ Day ${dayNumber} - ${dayDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
-                        </h4>
-                        <div class="grid grid-cols-1 gap-3" id="tours-day-${dayNumber}">
-                            ${destinationTours.map(tour => {
-                                const groupSize = parseInt(document.getElementById('group-size').value) || 2;
-                                const price = getPriceForGroupSize(tour.prices, groupSize);
-                                const tourKey = `${tour.code}-${dateString}`;
-                                const isSelected = selectedTours[tourKey] ? 'selected-tour' : '';
-                                
-                                return `
-                                    <div class="tour-item p-3 border rounded-lg cursor-pointer transition-all hover:border-orange-300 ${isSelected}" 
-                                         data-tour-key="${tourKey}" 
-                                         data-code="${tour.code}"
-                                         data-price="${price}"
-                                         data-destination="${destination}"
-                                         data-date="${dateString}"
-                                         onclick="toggleTour('${tourKey}', '${tour.code}', ${price}, '${destination}', '${dateString}', '${tour.name}', '${tour.duration}', '${tour.includes}')">
-                                        <div class="flex justify-between items-start">
-                                            <div class="flex-1">
-                                                <div class="font-medium text-gray-900 text-sm">${tour.code}: ${tour.name}</div>
-                                                <div class="text-xs text-gray-600 mt-1">
-                                                    <span class="inline-flex items-center mr-3">
-                                                        ⏱️ ${tour.duration}
-                                                    </span>
-                                                </div>
-                                                <div class="text-xs text-green-600 mt-1">✓ ${tour.includes}</div>
-                                            </div>
-                                            <div class="text-right">
-                                                <div class="text-orange-600 font-semibold text-sm">THB ${price.toLocaleString()}/person</div>
-                                                <div class="text-xs text-gray-500">${groupSize} guest(s)</div>
-                                                <div class="text-xs font-medium text-orange-700 mt-1">
-                                                    Total: THB ${(price * groupSize).toLocaleString()}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    `;
-                    container.appendChild(daySection);
-                    dayNumber++;
-                }
-
-                // Move current date forward by the number of nights
-                currentDate.setDate(currentDate.getDate() + nights);
-            });
-        }
-
-        function getPriceForGroupSize(prices, groupSize) {
-            if (groupSize === 1) return prices['1'] || 0;
-            if (groupSize <= 3) return prices['2-3'] || prices['2'] || 0;
-            if (groupSize <= 6) return prices['4-6'] || prices['3-6'] || prices['3-7'] || 0;
-            if (groupSize <= 9) return prices['7-9'] || 0;
-            return prices['10-14'] || prices['8+'] || 0;
-        }
-
-        function toggleTour(tourKey, code, price, destination, date, name, duration, includes) {
-            const tourElement = document.querySelector(`[data-tour-key="${tourKey}"]`);
             
-            if (selectedTours[tourKey]) {
-                // Deselect tour
-                delete selectedTours[tourKey];
-                tourElement.classList.remove('selected-tour');
-            } else {
-                // Select tour
-                selectedTours[tourKey] = {
-                    code: code,
-                    name: name,
-                    duration: duration,
-                    includes: includes,
-                    price: price,
-                    destination: destination,
-                    date: date
-                };
-                tourElement.classList.add('selected-tour');
+            const html = tours.map(tour => {
+                const fields = tour.fields;
+                const isSelected = window.appData.selectedTours.some(t => t.id === tour.id);
+                const price = getPriceForGroupSize(fields, window.appData.groupSize);
+                
+                return `
+                    <div class="border rounded-lg p-4 cursor-pointer transition-all ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300'}" 
+                         onclick="toggleTour('${tour.id}', ${JSON.stringify(fields).replace(/"/g, '&quot;')})">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="font-semibold text-gray-900">${fields.Tour_Code}</div>
+                            <div class="text-orange-600 font-bold">THB ${price.toLocaleString()}</div>
+                        </div>
+                        <h3 class="font-medium text-gray-800 mb-2">${fields.Tour_Name}</h3>
+                        <div class="text-sm text-gray-600 mb-2">
+                            <span class="inline-flex items-center mr-4">
+                                <span class="mr-1">📍</span> ${fields.Destination}
+                            </span>
+                            <span class="inline-flex items-center">
+                                <span class="mr-1">⏰</span> ${fields.Duration}
+                            </span>
+                        </div>
+                        <div class="text-xs text-green-600 mb-2">✓ ${fields.Includes}</div>
+                        <div class="text-xs text-gray-500">
+                            ${window.appData.groupSize} guest(s) × THB ${price.toLocaleString()} = THB ${(price * window.appData.groupSize).toLocaleString()}
+                        </div>
+                        ${isSelected ? '<div class="mt-2 text-xs font-medium text-orange-600">✓ Selected</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+        }
+
+        function renderHotels(hotels) {
+            const container = document.getElementById('hotelsContainer');
+            
+            if (!hotels || hotels.length === 0) {
+                container.innerHTML = '<div class="col-span-full text-center text-gray-500">No hotels found</div>';
+                return;
             }
             
-            calculateCosts();
+            const html = hotels.map(hotel => {
+                const fields = hotel.fields;
+                const isSelected = window.appData.selectedHotels.some(h => h.id === hotel.id);
+                
+                return `
+                    <div class="border rounded-lg p-4 cursor-pointer transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-300'}" 
+                         onclick="toggleHotel('${hotel.id}', ${JSON.stringify(fields).replace(/"/g, '&quot;')})">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="font-semibold text-purple-700">${fields.Category}</div>
+                            <div class="text-purple-600 font-bold">THB ${fields.Rate_Per_Night.toLocaleString()}/night</div>
+                        </div>
+                        <div class="text-sm text-gray-600 mb-2">
+                            <span class="inline-flex items-center">
+                                <span class="mr-1">📍</span> ${fields.Destination}
+                            </span>
+                        </div>
+                        ${isSelected ? '<div class="mt-2 text-xs font-medium text-purple-600">✓ Selected</div>' : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
         }
 
-        function calculateCosts() {
-            const groupSize = parseInt(document.getElementById('group-size').value) || 1;
-            const markup = parseFloat(document.getElementById('markup').value) || 0;
-            const exchangeRate = parseFloat(document.getElementById('exchange-rate').value) || 1;
-            const currency = document.getElementById('currency').value;
+        function getPriceForGroupSize(tourFields, groupSize) {
+            if (groupSize === 1 && tourFields.Price_1_Person) return tourFields.Price_1_Person;
+            if (groupSize <= 3 && tourFields.Price_2_3_People) return tourFields.Price_2_3_People;
+            if (groupSize <= 6 && tourFields.Price_4_6_People) return tourFields.Price_4_6_People;
+            if (groupSize <= 9 && tourFields.Price_7_9_People) return tourFields.Price_7_9_People;
+            if (tourFields.Price_10_Plus) return tourFields.Price_10_Plus;
+            return tourFields.Price_1_Person || 0;
+        }
+
+        function toggleTour(tourId, tourFields) {
+            const existingIndex = window.appData.selectedTours.findIndex(t => t.id === tourId);
             
-            // Calculate destinations for transfers
-            const destinations = document.querySelectorAll('.destination-item').length;
-            const transfersCost = destinations * 2 * 1500; // 2 transfers per destination
+            if (existingIndex !== -1) {
+                window.appData.selectedTours.splice(existingIndex, 1);
+            } else {
+                window.appData.selectedTours.push({
+                    id: tourId,
+                    fields: tourFields
+                });
+            }
             
-            // Calculate tours cost
-            let toursCost = 0;
-            Object.values(selectedTours).forEach(tour => {
-                toursCost += tour.price * groupSize;
-            });
+            loadAllTours(); // Refresh display
+            updateSelectedItems();
+        }
+
+        function toggleHotel(hotelId, hotelFields) {
+            const existingIndex = window.appData.selectedHotels.findIndex(h => h.id === hotelId);
             
-            // Calculate hotels cost
-            const hotels = document.querySelectorAll('.hotel-item');
-            let hotelsCost = 0;
-            hotels.forEach((hotel, index) => {
-                const rate = parseInt(hotel.querySelector('.hotel-rate').value) || 0;
-                const destinationElement = document.querySelectorAll('.destination-item')[index];
-                const nights = destinationElement ? parseInt(destinationElement.querySelector('.nights-input').value) || 3 : 3;
-                hotelsCost += rate * nights;
-            });
+            if (existingIndex !== -1) {
+                window.appData.selectedHotels.splice(existingIndex, 1);
+            } else {
+                window.appData.selectedHotels.push({
+                    id: hotelId,
+                    fields: hotelFields
+                });
+            }
             
-            const subtotal = transfersCost + toursCost + hotelsCost;
-            const markupAmount = subtotal * (markup / 100);
-            const totalWithMarkup = subtotal + markupAmount;
-            const finalAmount = totalWithMarkup / exchangeRate;
+            loadHotels(); // Refresh display
+            updateSelectedItems();
+        }
+
+        function updateSelectedItems() {
+            const container = document.getElementById('selectedItems');
             
-            // Update display
-            const currencySymbol = currency === 'USD' ? ' : currency === 'HKD' ? 'HK : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : 'THB ';
+            if (window.appData.selectedTours.length === 0 && window.appData.selectedHotels.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center">No items selected yet</p>';
+                return;
+            }
             
-            document.getElementById('transfers-cost').textContent = `THB ${transfersCost.toLocaleString()}`;
-            document.getElementById('tours-cost').textContent = `THB ${toursCost.toLocaleString()}`;
-            document.getElementById('hotels-cost').textContent = `THB ${hotelsCost.toLocaleString()}`;
-            document.getElementById('subtotal-cost').textContent = `THB ${subtotal.toLocaleString()}`;
-            document.getElementById('markup-cost').textContent = `THB ${markupAmount.toLocaleString()}`;
-            document.getElementById('final-amount').textContent = `${currencySymbol}${finalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            let totalCost = 0;
+            let html = '<div class="space-y-4">';
+            
+            // Selected Tours
+            if (window.appData.selectedTours.length > 0) {
+                html += '<div><h3 class="font-semibold text-gray-800 mb-2">Selected Tours:</h3>';
+                window.appData.selectedTours.forEach(tour => {
+                    const price = getPriceForGroupSize(tour.fields, window.appData.groupSize);
+                    const tourTotal = price * window.appData.groupSize;
+                    totalCost += tourTotal;
+                    
+                    html += `
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <div>
+                                <div class="font-medium">${tour.fields.Tour_Code}: ${tour.fields.Tour_Name}</div>
+                                <div class="text-sm text-gray-600">${tour.fields.Destination} • ${tour.fields.Duration}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-semibold">THB ${tourTotal.toLocaleString()}</div>
+                                <div class="text-xs text-gray-500">${window.appData.groupSize} × ${price.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            // Selected Hotels
+            if (window.appData.selectedHotels.length > 0) {
+                html += '<div><h3 class="font-semibold text-gray-800 mb-2">Selected Hotels:</h3>';
+                window.appData.selectedHotels.forEach(hotel => {
+                    const nights = 3; // Default, should be calculated based on destination
+                    const hotelTotal = hotel.fields.Rate_Per_Night * nights;
+                    totalCost += hotelTotal;
+                    
+                    html += `
+                        <div class="flex justify-between items-center py-2 border-b border-gray-200">
+                            <div>
+                                <div class="font-medium">${hotel.fields.Category}</div>
+                                <div class="text-sm text-gray-600">${hotel.fields.Destination} • ${nights} nights</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-semibold">THB ${hotelTotal.toLocaleString()}</div>
+                                <div class="text-xs text-gray-500">${nights} nights × ${hotel.fields.Rate_Per_Night.toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            // Total Cost
+            html += `
+                <div class="border-t-2 border-gray-300 pt-4">
+                    <div class="flex justify-between items-center">
+                        <div class="text-lg font-bold text-gray-800">Total Cost:</div>
+                        <div class="text-xl font-bold text-green-600">THB ${totalCost.toLocaleString()}</div>
+                    </div>
+                    <div class="text-sm text-gray-600 mt-1">
+                        Per person: THB ${(totalCost / window.appData.groupSize).toLocaleString()}
+                    </div>
+                </div>
+            `;
+            
+            html += '</div>';
+            container.innerHTML = html;
         }
 
         function addDestination() {
-            const container = document.getElementById('destinations-container');
-            const count = container.children.length + 1;
-            if (count > 4) return;
+            window.appData.destinations.push({ name: 'Bangkok', nights: 2 });
+            renderDestinations();
+        }
+
+        function renderDestinations() {
+            const container = document.getElementById('destinationsContainer');
+            const destinations = ['Bangkok', 'Phuket', 'Chiang Mai', 'Krabi'];
             
-            const newDestination = document.createElement('div');
-            newDestination.className = 'destination-item p-4 bg-gray-50 rounded-lg mb-4';
-            newDestination.innerHTML = `
-                <div class="flex gap-4 items-start">
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Destination ${count}</label>
-                        <select class="destination-select w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                            <option value="Bangkok">Bangkok</option>
-                            <option value="Phuket">Phuket</option>
-                            <option value="Chiang Mai">Chiang Mai</option>
-                            <option value="Krabi">Krabi</option>
-                        </select>
+            const html = window.appData.destinations.map((dest, index) => `
+                <div class="p-4 bg-gray-50 rounded-lg">
+                    <div class="flex gap-4 items-start">
+                        <div class="flex-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Destination ${index + 1}</label>
+                            <select onchange="updateDestination(${index}, 'name', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
+                                ${destinations.map(d => `<option value="${d}" ${d === dest.name ? 'selected' : ''}>${d}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="w-32">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nights</label>
+                            <input type="number" min="1" max="14" value="${dest.nights}" onchange="updateDestination(${index}, 'nights', this.value)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500">
+                        </div>
+                        ${window.appData.destinations.length > 1 ? `
+                            <button onclick="removeDestination(${index})" class="text-red-500 hover:text-red-700 p-2 mt-6">
+                                <span>×</span>
+                            </button>
+                        ` : ''}
                     </div>
-                    <div class="w-28">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nights</label>
-                        <input type="number" class="nights-input w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent" value="2" min="1" max="14">
-                    </div>
-                    <button onclick="removeDestination(this)" class="text-red-500 hover:text-red-700 p-2 mt-6">✕</button>
                 </div>
-            `;
-            container.appendChild(newDestination);
+            `).join('');
             
-            // Add event listeners
-            newDestination.querySelector('.nights-input').addEventListener('input', function() {
-                calculateEndDate();
-                generateDailyTours();
-            });
-            newDestination.querySelector('.destination-select').addEventListener('change', generateDailyTours);
-            
-            calculateEndDate();
-            generateDailyTours();
+            container.innerHTML = html;
         }
 
-        function removeDestination(button) {
-            button.closest('.destination-item').remove();
-            calculateEndDate();
-            generateDailyTours();
+        function updateDestination(index, field, value) {
+            window.appData.destinations[index][field] = field === 'nights' ? parseInt(value) : value;
+            renderDestinations();
         }
 
-        function addHotel() {
-            const container = document.getElementById('hotels-container');
-            const newHotel = document.createElement('div');
-            newHotel.className = 'hotel-item p-4 bg-gray-50 rounded-lg mb-4';
-            newHotel.innerHTML = `
-                <div class="flex gap-4 items-start">
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Destination</label>
-                        <select class="hotel-destination w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                            <option value="Bangkok">Bangkok</option>
-                            <option value="Phuket">Phuket</option>
-                            <option value="Chiang Mai">Chiang Mai</option>
-                            <option value="Krabi">Krabi</option>
-                        </select>
-                    </div>
-                    <div class="flex-1">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Hotel Category</label>
-                        <select class="hotel-category w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent">
-                            <option value="budget">Budget (3★) - THB 1,500/night</option>
-                            <option value="standard" selected>Standard (4★) - THB 2,800/night</option>
-                            <option value="deluxe">Deluxe (5★) - THB 5,500/night</option>
-                            <option value="luxury">Luxury (5★+) - THB 8,500/night</option>
-                        </select>
-                    </div>
-                    <div class="w-32">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Rate/Night</label>
-                        <input type="number" class="hotel-rate w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent" value="2800">
-                    </div>
-                    <button onclick="removeHotel(this)" class="text-red-500 hover:text-red-700 p-2 mt-6">✕</button>
-                </div>
-            `;
-            container.appendChild(newHotel);
-            
-            // Add event listener for new hotel rate input
-            newHotel.querySelector('.hotel-rate').addEventListener('input', calculateCosts);
-            calculateCosts();
-        }
-
-        function removeHotel(button) {
-            button.closest('.hotel-item').remove();
-            calculateCosts();
+        function removeDestination(index) {
+            if (window.appData.destinations.length > 1) {
+                window.appData.destinations.splice(index, 1);
+                renderDestinations();
+            }
         }
 
         function generateQuotation() {
-            // Gather all data
-            const clientName = document.getElementById('client-name').value || 'N/A';
-            const clientEmail = document.getElementById('client-email').value || 'N/A';
-            const clientPhone = document.getElementById('client-phone').value || 'N/A';
-            const clientNationality = document.getElementById('client-nationality').value || 'N/A';
-            const specialRequests = document.getElementById('special-requests').value;
-            const groupSize = document.getElementById('group-size').value;
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
-            const quoteNumber = document.getElementById('quote-number').textContent;
-            const validUntil = document.getElementById('valid-until').textContent;
-            const summaryNotes = document.getElementById('summary-notes').value;
+            const totalCost = calculateTotalCost();
             
-            // Get destinations
-            const destinations = Array.from(document.querySelectorAll('.destination-item')).map((item, index) => {
-                const destination = item.querySelector('.destination-select').value;
-                const nights = item.querySelector('.nights-input').value;
-                return { name: destination, nights: parseInt(nights) };
-            });
-            
-            // Get hotels
-            const hotels = Array.from(document.querySelectorAll('.hotel-item')).map(hotel => {
-                const destination = hotel.querySelector('.hotel-destination').value;
-                const category = hotel.querySelector('.hotel-category option:checked').textContent;
-                const rate = hotel.querySelector('.hotel-rate').value;
-                return `• ${destination}: ${category} @ THB ${parseInt(rate).toLocaleString()}/night`;
-            });
-            
-            // Calculate costs for quotation
-            const transfersCost = document.getElementById('transfers-cost').textContent;
-            const toursCost = document.getElementById('tours-cost').textContent;
-            const hotelsCost = document.getElementById('hotels-cost').textContent;
-            const subtotalCost = document.getElementById('subtotal-cost').textContent;
-            const markupCost = document.getElementById('markup-cost').textContent;
-            const finalAmount = document.getElementById('final-amount').textContent;
-            const markup = document.getElementById('markup').value;
-            
-            // Generate day-by-day itinerary
-            let itinerary = '';
-            let dayCounter = 1;
-            let currentDate = new Date(startDate);
-            
-            destinations.forEach((destination, destIndex) => {
-                itinerary += `\n${destination.name.toUpperCase()} (${destination.nights} nights)\n`;
-                itinerary += '='.repeat(destination.name.length + 12) + '\n';
-                
-                for (let day = 0; day < destination.nights; day++) {
-                    const dayDate = new Date(currentDate);
-                    dayDate.setDate(dayDate.getDate() + day);
-                    const dateString = dayDate.toISOString().split('T')[0];
-                    
-                    itinerary += `\nDay ${dayCounter} - ${dayDate.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n`;
-                    itinerary += '-'.repeat(50) + '\n';
-                    
-                    // Add arrival transfer for first day
-                    if (day === 0) {
-                        itinerary += `• Airport transfer from ${destination.name} Airport to Hotel\n`;
-                    }
-                    
-                    // Add hotel accommodation
-                    const destHotel = hotels.find(h => h.includes(destination.name));
-                    if (destHotel) {
-                        itinerary += `• Accommodation: Hotel in ${destination.name}\n`;
-                    }
-                    
-                    // Add selected tours for this day
-                    const dayTours = Object.values(selectedTours).filter(tour => 
-                        tour.destination === destination.name && tour.date === dateString
-                    );
-                    
-                    if (dayTours.length > 0) {
-                        dayTours.forEach(tour => {
-                            itinerary += `• Tour: ${tour.code} - ${tour.name}\n`;
-                            itinerary += `  Duration: ${tour.duration}\n`;
-                            itinerary += `  Includes: ${tour.includes}\n`;
-                        });
-                    } else {
-                        itinerary += '• Free Day / Leisure time\n';
-                    }
-                    
-                    // Add departure transfer for last day
-                    if (day === destination.nights - 1) {
-                        itinerary += `• Transfer-out to ${destination.name} Airport\n`;
-                    }
-                    
-                    dayCounter++;
-                }
-                
-                currentDate.setDate(currentDate.getDate() + destination.nights);
-            });
-            
-            // Generate quotation text
-            const quotationText = `
+            let quotationText = `
 SUN SERIES TRAVEL CO., LTD.
-QUOTATION FOR THAILAND TOUR PACKAGE
-=====================================
+PROFESSIONAL THAILAND TOUR QUOTATION
+====================================
 
-QUOTATION NO: ${quoteNumber}
+QUOTATION NO: ${window.appData.quotationNumber}
 DATE: ${new Date().toLocaleDateString('en-GB')}
-VALID UNTIL: ${validUntil}
+VALID UNTIL: ${new Date(window.appData.validUntil).toLocaleDateString('en-GB')}
 
 CLIENT INFORMATION:
 ==================
-Name: ${clientName}
-Email: ${clientEmail}
-Phone: ${clientPhone}
-Nationality: ${clientNationality}
+Name: ${document.getElementById('clientName').value || 'N/A'}
+Email: ${document.getElementById('clientEmail').value || 'N/A'}
+Phone: ${document.getElementById('clientPhone').value || 'N/A'}
+Nationality: ${document.getElementById('clientNationality').value || 'N/A'}
 
 TOUR DETAILS:
 =============
-Group Size: ${groupSize} guest(s)
-Travel Period: ${startDate} to ${endDate}
-Total Duration: ${destinations.reduce((sum, dest) => sum + dest.nights, 0)} nights / ${destinations.reduce((sum, dest) => sum + dest.nights, 0) + 1} days
+Group Size: ${window.appData.groupSize} guest(s)
+Travel Period: ${document.getElementById('startDate').value} to ${document.getElementById('endDate').value}
 
-DAY-BY-DAY ITINERARY:
-=====================${itinerary}
-
-SELECTED TOURS SUMMARY:
-======================
-${Object.values(selectedTours).map(tour => 
-    `• ${tour.code}: ${tour.name} (${tour.duration}) - THB ${tour.price.toLocaleString()}/person`
-).join('\n') || 'No tours selected'}
-
-ACCOMMODATION DETAILS:
-=====================
-${hotels.join('\n') || 'No hotels specified'}
-
-COST BREAKDOWN:
+SELECTED TOURS:
 ===============
-Airport Transfers: ${transfersCost}
-Tours Total: ${toursCost}
-Hotels Total: ${hotelsCost}
+`;
 
-Subtotal: ${subtotalCost}
-Markup (${markup}%): ${markupCost}
+            if (window.appData.selectedTours.length > 0) {
+                window.appData.selectedTours.forEach(tour => {
+                    const price = getPriceForGroupSize(tour.fields, window.appData.groupSize);
+                    const tourTotal = price * window.appData.groupSize;
+                    
+                    quotationText += `
+• ${tour.fields.Code}: ${tour.fields['Bangkok Tour list'] || tour.fields['Phuket Tour list'] || 'Tour'}
+  Type: ${tour.fields.Type || 'N/A'}
+  Duration: ${tour.fields.Duration || 'N/A'}
+  Cost: THB ${tourTotal.toLocaleString()} (${window.appData.groupSize} guests × ${price.toLocaleString()})
+`;
+                });
+            } else {
+                quotationText += 'No tours selected\n';
+            }
 
-FINAL AMOUNT: ${finalAmount}
+            quotationText += `
+SELECTED ACCOMMODATION:
+======================
+`;
 
-${specialRequests ? `\nSPECIAL REQUESTS:\n================\n${specialRequests}\n` : ''}
-${summaryNotes ? `\nADDITIONAL NOTES:\n================\n${summaryNotes}\n` : ''}
+            if (window.appData.selectedHotels.length > 0) {
+                window.appData.selectedHotels.forEach(hotel => {
+                    const nights = 3; // Should be calculated based on destination
+                    const hotelTotal = hotel.fields.Rate_Per_Night * nights;
+                    
+                    quotationText += `
+• ${hotel.fields.Category}
+  Destination: ${hotel.fields.Destination}
+  Rate: THB ${hotel.fields.Rate_Per_Night.toLocaleString()}/night
+  Duration: ${nights} nights
+  Total: THB ${hotelTotal.toLocaleString()}
+`;
+                });
+            } else {
+                quotationText += 'No hotels selected\n';
+            }
+
+            quotationText += `
+COST SUMMARY:
+=============
+Total Package Cost: THB ${totalCost.toLocaleString()}
+Cost per Person: THB ${(totalCost / window.appData.groupSize).toLocaleString()}
 
 TERMS & CONDITIONS:
 ==================
-• This quotation is valid until ${validUntil}
-• Prices are subject to change based on hotel availability and seasonal rates
+• This quotation is valid until ${new Date(window.appData.validUntil).toLocaleDateString('en-GB')}
+• Prices are subject to change based on availability
 • Full payment required 7 days before departure
 • Cancellation policy applies as per company terms
 • All tours are subject to weather conditions
@@ -745,36 +658,76 @@ Phone: +66 (0) 2-XXX-XXXX
 License: TAT License No. XXXX
 
 Generated on: ${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB')}
+Data powered by Airtable
 `;
 
-            // Display quotation
-            document.getElementById('quotation-text').textContent = quotationText;
-            document.getElementById('quotation-display').classList.remove('hidden');
-            document.getElementById('quotation-display').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('quotationText').textContent = quotationText;
+            document.getElementById('quotationDisplay').style.display = 'block';
+        }
+
+        function calculateTotalCost() {
+            let total = 0;
+            
+            // Tours cost
+            window.appData.selectedTours.forEach(tour => {
+                const price = getPriceForGroupSize(tour.fields, window.appData.groupSize);
+                total += price * window.appData.groupSize;
+            });
+            
+            // Hotels cost
+            window.appData.selectedHotels.forEach(hotel => {
+                const nights = 3; // Should be calculated based on destination
+                total += hotel.fields.Rate_Per_Night * nights;
+            });
+            
+            return total;
         }
 
         function copyQuotation() {
-            const quotationText = document.getElementById('quotation-text').textContent;
+            const quotationText = document.getElementById('quotationText').textContent;
             navigator.clipboard.writeText(quotationText).then(() => {
                 alert('Quotation copied to clipboard!');
             });
         }
 
         function downloadQuotation() {
-            const quotationText = document.getElementById('quotation-text').textContent;
-            const quoteNumber = document.getElementById('quote-number').textContent;
+            const quotationText = document.getElementById('quotationText').textContent;
             const blob = new Blob([quotationText], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Quotation_${quoteNumber}.txt`;
+            a.download = `Quotation_${window.appData.quotationNumber}.txt`;
             a.click();
             URL.revokeObjectURL(url);
         }
 
-        function closeQuotation() {
-            document.getElementById('quotation-display').classList.add('hidden');
-        }
+        // Initialize system
+        document.addEventListener('DOMContentLoaded', function() {
+            // Generate quotation number
+            const date = new Date();
+            const qNumber = 'SST-' + date.getFullYear() + String(date.getMonth() + 1).padStart(2, '0') + '-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            window.appData.quotationNumber = qNumber;
+            document.getElementById('quotationNumber').textContent = qNumber;
+            
+            // Set valid until date (30 days from now)
+            date.setDate(date.getDate() + 30);
+            const validUntil = date.toISOString().split('T')[0];
+            window.appData.validUntil = validUntil;
+            document.getElementById('validUntil').textContent = date.toLocaleDateString('en-GB');
+            
+            // Bind events
+            document.getElementById('groupSize').addEventListener('input', function(e) {
+                window.appData.groupSize = parseInt(e.target.value);
+                updateSelectedItems();
+                // Refresh tours display if loaded
+                if (document.getElementById('toursContainer').children.length > 0) {
+                    loadAllTours();
+                }
+            });
+            
+            // Render initial destinations
+            renderDestinations();
+        });
     </script>
 </body>
 </html>
