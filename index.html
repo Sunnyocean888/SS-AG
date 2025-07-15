@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sun Series Travel - Professional Quotation System</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Calendar, MapPin, Users, FileText, Download, Plus, Minus, Building2, Plane, Clock, DollarSign, User } = lucide;
+
+        function SunSeriesQuotationSystem() {
+            const [quotation, setQuotation] = useState({
+                clientInfo: {
+                    name: '',
+                    email: '',
+                    phone: '',
+                    nationality: '',
+                    specialRequests: ''
+                },
+                destinations: [{ name: 'Bangkok', nights: 3 }],
+                travelDates: { start: '', end: '' },
+                groupSize: 1,
+                selectedTours: [],
+                hotels: [],
+                summary: '',
+                showQuotation: false,
+                generatedQuotation: '',
+                markup: 20,
+                currency: 'THB',
+                exchangeRates: { THB: 1, USD: 35.5, HKD: 4.55, EUR: 38.2, GBP: 44.8 },
+                quotationNumber: '',
+                validUntil: ''
+            });
+
+            const tourData = {
+                Bangkok: [
+                    { 
+                        code: 'BKK-001', 
+                        name: 'Damnoen Saduak Floating Market & Maeklong Railway Market Tour', 
+                        duration: '10 hours', 
+                        prices: { '1': 8700, '2-3': 4450, '4-6': 2325, '7-9': 1414 },
+                        includes: 'Guide, transportation, lunch, entrance fees'
+                    },
+                    { 
+                        code: 'BKK-002', 
+                        name: 'Safari World & Marine Park with Lunch + Dinner Cruise', 
+                        duration: '10 hours', 
+                        prices: { '1': 10700, '2-3': 6450, '4-6': 4325, '7-9': 3414 },
+                        includes: 'Guide, transportation, lunch, dinner cruise, entrance fees'
+                    },
+                    { 
+                        code: 'BKK-003', 
+                        name: 'Temple tour (Grand Palace + Emerald Buddha & Reclining Buddha)', 
+                        duration: '10 hours', 
+                        prices: { '1': 8550, '2-3': 5050, '4-6': 3300, '7-9': 2550 },
+                        includes: 'Guide, transportation, entrance fees'
+                    }
+                ],
+                Phuket: [
+                    { 
+                        code: 'HKT-001', 
+                        name: 'Phi Phi Island Tour (Join Speed Boat) includes lunch', 
+                        duration: '7 hours', 
+                        prices: { '1': 3700, '2-3': 2700, '4-6': 2200, '7-9': 1986 },
+                        includes: 'Speed boat, guide, lunch, snorkeling equipment'
+                    },
+                    { 
+                        code: 'HKT-002', 
+                        name: 'Phang Nga Bay Tour + Canoeing at Hong and Panak Islands', 
+                        duration: '7 hours', 
+                        prices: { '1': 3700, '2-3': 2700, '4-6': 2200, '7-9': 1986 },
+                        includes: 'Long tail boat, guide, lunch, canoeing equipment'
+                    }
+                ],
+                'Chiang Mai': [
+                    { 
+                        code: 'CNX-001', 
+                        name: 'Doi Inthanon National Park + Red Karen Hill tribe + Lunch', 
+                        duration: '9 hours', 
+                        prices: { '1': 5670, '2': 3155, '3-6': 2675, '7-9': 2140 },
+                        includes: 'Guide, transportation, lunch, entrance fees'
+                    }
+                ],
+                Krabi: [
+                    { 
+                        code: 'KBV-001', 
+                        name: '4 Islands Tour by Long Tail Boat', 
+                        duration: '7 hours', 
+                        prices: { '1': 4500, '2': 2800, '3-7': 2200, '8+': 1900 },
+                        includes: 'Long tail boat, guide, lunch, snorkeling equipment'
+                    }
+                ]
+            };
+
+            const hotelCategories = {
+                'Budget (3★)': { Bangkok: 1500, Phuket: 1200, 'Chiang Mai': 800, Krabi: 1000 },
+                'Standard (4★)': { Bangkok: 2800, Phuket: 2200, 'Chiang Mai': 1600, Krabi: 1800 },
+                'Deluxe (5★)': { Bangkok: 5500, Phuket: 4200, 'Chiang Mai': 3200, Krabi: 3800 },
+                'Luxury (5★+)': { Bangkok: 8500, Phuket: 6800, 'Chiang Mai': 5200, Krabi: 6000 }
+            };
+
+            const destinationOptions = ['Bangkok', 'Phuket', 'Chiang Mai', 'Krabi'];
+
+            // Generate quotation number
+            useEffect(() => {
+                if (!quotation.quotationNumber) {
+                    const date = new Date();
+                    const number = `SST-${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
+                    setQuotation(prev => ({ ...prev, quotationNumber: number }));
+                }
+            }, []);
+
+            // Set valid until date (30 days from today)
+            useEffect(() => {
+                if (!quotation.validUntil) {
+                    const date = new Date();
+                    date.setDate(date.getDate() + 30);
+                    setQuotation(prev => ({ ...prev, validUntil: date.toISOString().split('T')[0] }));
+                }
+            }, []);
+
+            const calculateDestinationDates = () => {
+                if (!quotation.travelDates.start) return [];
+                
+                const dates = [];
+                let currentDate = new Date(quotation.travelDates.start);
+                
+                quotation.destinations.forEach((dest) => {
+                    const startDate = new Date(currentDate);
+                    const endDate = new Date(currentDate);
+                    endDate.setDate(endDate.getDate() + dest.nights);
+                    
+                    dates.push({
+                        name: dest.name,
+                        nights: dest.nights,
+                        startDate: startDate.toISOString().split('T')[0],
+                        endDate: endDate.toISOString().split('T')[0]
+                    });
+                    
+                    currentDate = new Date(endDate);
+                });
+                
+                return dates;
+            };
+
+            useEffect(() => {
+                if (quotation.travelDates.start) {
+                    const totalNights = quotation.destinations.reduce((sum, dest) => sum + dest.nights, 0);
+                    const endDate = new Date(quotation.travelDates.start);
+                    endDate.setDate(endDate.getDate() + totalNights);
+                    
+                    setQuotation(prev => ({
+                        ...prev,
+                        travelDates: { 
+                            start: prev.travelDates.start, 
+                            end: endDate.toISOString().split('T')[0] 
+                        }
+                    }));
+                }
+            }, [quotation.destinations, quotation.travelDates.start]);
+
+            const generateAirportTransfers = () => {
+                const transfers = [];
+                const destinationDates = calculateDestinationDates();
+                
+                destinationDates.forEach((dest, index) => {
+                    transfers.push({
+                        id: `arrival-${index}`,
+                        destination: dest.name,
+                        date: dest.startDate,
+                        type: 'arrival',
+                        description: `Airport transfer from ${dest.name} Airport to Hotel`,
+                        price: 1500
+                    });
+                    
+                    transfers.push({
+                        id: `departure-${index}`,
+                        destination: dest.name,
+                        date: dest.endDate,
+                        type: 'departure',
+                        description: `Transfer-out to ${dest.name} Airport`,
+                        price: 1500
+                    });
+                });
+                
+                return transfers;
+            };
+
+            const generateDailySchedule = (destination, startDate) => {
+                if (!startDate) return [];
+                
+                const days = [];
+                const start = new Date(startDate);
+                
+                for (let i = 0; i < destination.nights; i++) {
+                    const currentDate = new Date(start);
+                    currentDate.setDate(currentDate.getDate() + i);
+                    
+                    days.push({
+                        date: currentDate.toISOString().split('T')[0],
+                        dayNumber: i + 1
+                    });
+                }
+                return days;
+            };
+
+            const getPriceForGroupSize = (prices, groupSize) => {
+                if (groupSize === 1) return prices['1'] || 0;
+                if (groupSize <= 3) return prices['2-3'] || prices['2'] || 0;
+                if (groupSize <= 6) return prices['4-6'] || prices['3-6'] || prices['3-7'] || 0;
+                if (groupSize <= 9) return prices['7-9'] || 0;
+                return prices['10-14'] || prices['8+'] || 0;
+            };
+
+            const calculateCosts = () => {
+                const transfersCost = generateAirportTransfers().reduce((sum, transfer) => sum + transfer.price, 0);
+                
+                const toursCost = quotation.selectedTours.reduce((sum, tour) => {
+                    const price = getPriceForGroupSize(tour.prices, quotation.groupSize);
+                    return sum + (price * quotation.groupSize);
+                }, 0);
+                
+                const hotelsCost = quotation.hotels.reduce((sum, hotel) => {
+                    return sum + (hotel.rate * hotel.nights);
+                }, 0);
+                
+                const subtotal = transfersCost + toursCost + hotelsCost;
+                const markupAmount = subtotal * (quotation.markup / 100);
+                const totalWithMarkup = subtotal + markupAmount;
+                const finalAmount = totalWithMarkup / quotation.exchangeRates[quotation.currency];
+                
+                return {
+                    transfersCost,
+                    toursCost,
+                    hotelsCost,
+                    subtotal,
+                    markupAmount,
+                    totalWithMarkup,
+                    finalAmount
+                };
+            };
+
+            const addDestination = () => {
+                if (quotation.destinations.length < 4) {
+                    setQuotation(prev => ({
+                        ...prev,
+                        destinations: [...prev.destinations, { name: 'Bangkok', nights: 2 }]
+                    }));
+                }
+            };
+
+            const removeDestination = (index) => {
+                if (quotation.destinations.length > 1) {
+                    setQuotation(prev => ({
+                        ...prev,
+                        destinations: prev.destinations.filter((dest, i) => i !== index)
+                    }));
+                }
+            };
+
+            const updateDestination = (index, field, value) => {
+                setQuotation(prev => ({
+                    ...prev,
+                    destinations: prev.destinations.map((dest, i) => 
+                        i === index ? { ...dest, [field]: value } : dest
+                    )
+                }));
+            };
+
+            const addHotel = () => {
+                const firstDest = quotation.destinations[0];
+                setQuotation(prev => ({
+                    ...prev,
+                    hotels: [...prev.hotels, { 
+                        destination: firstDest ? firstDest.name : 'Bangkok',
+                        category: 'Standard (4★)',
+                        nights: firstDest ? firstDest.nights : 3, 
+                        rate: hotelCategories['Standard (4★)'][firstDest ? firstDest.name : 'Bangkok'] || 2800
+                    }]
+                }));
+            };
+
+            const removeHotel = (index) => {
+                setQuotation(prev => ({
+                    ...prev,
+                    hotels: prev.hotels.filter((hotel, i) => i !== index)
+                }));
+            };
+
+            const updateHotel = (index, field, value) => {
+                setQuotation(prev => ({
+                    ...prev,
+                    hotels: prev.hotels.map((hotel, i) => {
+                        if (i === index) {
+                            const updatedHotel = { ...hotel, [field]: value };
+                            if (field === 'category' || field === 'destination') {
+                                const category = field === 'category' ? value : hotel.category;
+                                const destination = field === 'destination' ? value : hotel.destination;
+                                updatedHotel.rate = hotelCategories[category]?.[destination] || hotel.rate;
+                            }
+                            return updatedHotel;
+                        }
+                        return hotel;
+                    })
+                }));
+            };
+
+            const generateQuotation = () => {
+                const costs = calculateCosts();
+                const currencySymbol = quotation.currency === 'USD' ? '$' : quotation.currency === 'HKD' ? 'HK$' : quotation.currency === 'EUR' ? '€' : quotation.currency === 'GBP' ? '£' : 'THB ';
+                const destinationDates = calculateDestinationDates();
+                const transfers = generateAirportTransfers();
+
+                let quotationText = `
+SUN SERIES TRAVEL CO., LTD.
+QUOTATION FOR THAILAND TOUR PACKAGE
+=====================================
+
+QUOTATION NO: ${quotation.quotationNumber}
+DATE: ${new Date().toLocaleDateString('en-GB')}
+VALID UNTIL: ${new Date(quotation.validUntil).toLocaleDateString('en-GB')}
+
+CLIENT INFORMATION:
+==================
+Name: ${quotation.clientInfo.name || 'N/A'}
+Email: ${quotation.clientInfo.email || 'N/A'}
+Phone: ${quotation.clientInfo.phone || 'N/A'}
+Nationality: ${quotation.clientInfo.nationality || 'N/A'}
+
+TOUR DETAILS:
+=============
+Group Size: ${quotation.groupSize} guest(s)
+Travel Period: ${quotation.travelDates.start} to ${quotation.travelDates.end}
+Total Duration: ${quotation.destinations.reduce((sum, dest) => sum + dest.nights, 0)} nights / ${quotation.destinations.reduce((sum, dest) => sum + dest.nights, 0) + 1} days
+
+COST BREAKDOWN:
+===============
+Airport Transfers: THB ${costs.transfersCost.toLocaleString()}
+Tours Total: THB ${costs.toursCost.toLocaleString()}
+Hotels Total: THB ${costs.hotelsCost.toLocaleString()}
+
+Subtotal: THB ${costs.subtotal.toLocaleString()}
+Markup (${quotation.markup}%): THB ${costs.markupAmount.toLocaleString()}
+Total with Markup: THB ${costs.totalWithMarkup.toLocaleString()}
+
+FINAL AMOUNT: ${currencySymbol}${costs.finalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+${quotation.currency !== 'THB' ? `Exchange Rate: 1 ${quotation.currency} = ${quotation.exchangeRates[quotation.currency]} THB` : ''}
+
+${quotation.summary ? `\nADDITIONAL NOTES:\n================\n${quotation.summary}\n\n` : ''}
+
+TERMS & CONDITIONS:
+==================
+• This quotation is valid until ${new Date(quotation.validUntil).toLocaleDateString('en-GB')}
+• Prices are subject to change based on hotel availability and seasonal rates
+• Full payment required 7 days before departure
+• Cancellation policy applies as per company terms
+
+CONTACT INFORMATION:
+===================
+Sun Series Travel Co., Ltd.
+Email: info@sunseriestravel.com
+Phone: +66 (0) 2-XXX-XXXX
+
+Generated on: ${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB')}
+`;
+
+                setQuotation(prev => ({
+                    ...prev,
+                    showQuotation: true,
+                    generatedQuotation: quotationText
+                }));
+            };
+
+            const costs = calculateCosts();
+            const currencySymbol = quotation.currency === 'USD' ? '$' : quotation.currency === 'HKD' ? 'HK$' : quotation.currency === 'EUR' ? '€' : quotation.currency === 'GBP' ? '£' : 'THB ';
+
+            return (
+                <div className="max-w-6xl mx-auto p-6 bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen">
+                    <div className="bg-white rounded-xl shadow-lg p-8">
+                        <div className="text-center mb-8">
+                            <h1 className="text-3xl font-bold text-orange-600 mb-2">Sun Series Travel Co., Ltd.</h1>
+                            <p className="text-gray-600">Professional Tour Quotation System - Thailand Specialist</p>
+                            <div className="flex justify-center items-center gap-4 mt-4 text-sm text-gray-500">
+                                <span>Quote #: {quotation.quotationNumber}</span>
+                                <span>•</span>
+                                <span>Valid Until: {new Date(quotation.validUntil).toLocaleDateString('en-GB')}</span>
+                            </div>
+                        </div>
+
+                        {/* Client Information */}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                <User className="mr-2 text-blue-500" size={20} />
+                                Client Information
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Client Name</label>
+                                    <input
+                                        type="text"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        value={quotation.clientInfo.name}
+                                        onChange={(e) => setQuotation(prev => ({ 
+                                            ...prev, 
+                                            clientInfo: { ...prev.clientInfo, name: e.target.value }
+                                        }))}
+                                        placeholder="Full name"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                    <input
+                                        type="email"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        value={quotation.clientInfo.email}
+                                        onChange={(e) => setQuotation(prev => ({ 
+                                            ...prev, 
+                                            clientInfo: { ...prev.clientInfo, email: e.target.value }
+                                        }))}
+                                        placeholder="email@example.com"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Number of Guests</label>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        value={quotation.groupSize}
+                                        onChange={(e) => setQuotation(prev => ({ ...prev, groupSize: parseInt(e.target.value) }))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Travel Dates */}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                <Calendar className="mr-2 text-orange-500" size={20} />
+                                Travel Dates
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                                    <input
+                                        type="date"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                        value={quotation.travelDates.start}
+                                        onChange={(e) => setQuotation(prev => ({ 
+                                            ...prev, 
+                                            travelDates: { ...prev.travelDates, start: e.target.value }
+                                        }))}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">End Date (Auto-calculated)</label>
+                                    <input
+                                        type="date"
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600"
+                                        value={quotation.travelDates.end}
+                                        readOnly
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Destinations */}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                <MapPin className="mr-2 text-orange-500" size={20} />
+                                Destinations
+                            </h2>
+                            <div className="flex justify-end mb-4">
+                                <button
+                                    onClick={addDestination}
+                                    disabled={quotation.destinations.length >= 4}
+                                    className={`px-4 py-2 rounded-md flex items-center text-sm ${
+                                        quotation.destinations.length >= 4
+                                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                                            : 'bg-orange-500 text-white hover:bg-orange-600'
+                                    }`}
+                                >
+                                    <Plus size={16} className="mr-1" />
+                                    Add Destination
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                {quotation.destinations.map((destination, index) => {
+                                    const destDate = calculateDestinationDates()[index];
+                                    return (
+                                        <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                                            <div className="flex gap-4 items-start">
+                                                <div className="flex-1">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                        Destination {index + 1}
+                                                    </label>
+                                                    <select
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                                        value={destination.name}
+                                                        onChange={(e) => updateDestination(index, 'name', e.target.value)}
+                                                    >
+                                                        {destinationOptions.map(dest => (
+                                                            <option key={dest} value={dest}>{dest}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="w-28">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Nights</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="14"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                                        value={destination.nights}
+                                                        onChange={(e) => updateDestination(index, 'nights', parseInt(e.target.value))}
+                                                    />
+                                                </div>
+                                                {quotation.destinations.length > 1 && (
+                                                    <button
+                                                        onClick={() => removeDestination(index)}
+                                                        className="text-red-500 hover:text-red-700 p-2 mt-6"
+                                                    >
+                                                        <Minus size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Hotels */}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                <Building2 className="mr-2 text-purple-500" size={20} />
+                                Accommodation
+                            </h2>
+                            <div className="flex justify-end mb-4">
+                                <button
+                                    onClick={addHotel}
+                                    className="px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 flex items-center text-sm"
+                                >
+                                    <Plus size={16} className="mr-1" />
+                                    Add Hotel
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                {quotation.hotels.map((hotel, index) => {
+                                    return (
+                                        <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                                            <div className="flex gap-4 items-start">
+                                                <div className="flex-1">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Destination</label>
+                                                    <select
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                        value={hotel.destination}
+                                                        onChange={(e) => updateHotel(index, 'destination', e.target.value)}
+                                                    >
+                                                        {quotation.destinations.map(dest => (
+                                                            <option key={dest.name} value={dest.name}>{dest.name}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Hotel Category</label>
+                                                    <select
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                        value={hotel.category}
+                                                        onChange={(e) => updateHotel(index, 'category', e.target.value)}
+                                                    >
+                                                        {Object.keys(hotelCategories).map(category => (
+                                                            <option key={category} value={category}>{category}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div className="w-32">
+                                                    <label className="block text-sm font-medium text-gray-700 mb-1">Rate/Night</label>
+                                                    <input
+                                                        type="number"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                                        value={hotel.rate}
+                                                        onChange={(e) => updateHotel(index, 'rate', parseFloat(e.target.value))}
+                                                        placeholder="THB"
+                                                    />
+                                                </div>
+                                                <button
+                                                    onClick={() => removeHotel(index)}
+                                                    className="text-red-500 hover:text-red-700 p-2 mt-6"
+                                                >
+                                                    <Minus size={16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Cost Summary */}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                <DollarSign className="mr-2 text-green-500" size={20} />
+                                Cost Summary
+                            </h2>
+                            
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                                    <h3 className="text-lg font-semibold text-blue-800 mb-4">Settings</h3>
+                                    
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Markup (%)</label>
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                value={quotation.markup}
+                                                onChange={(e) => setQuotation(prev => ({ ...prev, markup: parseFloat(e.target.value) }))}
+                                            />
+                                        </div>
+                                        
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                                            <select
+                                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                value={quotation.currency}
+                                                onChange={(e) => setQuotation(prev => ({ ...prev, currency: e.target.value }))}
+                                            >
+                                                <option value="THB">Thai Baht (THB)</option>
+                                                <option value="USD">US Dollar (USD)</option>
+                                                <option value="HKD">Hong Kong Dollar (HKD)</option>
+                                                <option value="EUR">Euro (EUR)</option>
+                                                <option value="GBP">British Pound (GBP)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                                    <h3 className="text-lg font-semibold text-green-800 mb-4">Cost Breakdown</h3>
+                                    
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center py-2 border-b border-green-200">
+                                            <span className="text-gray-700">Airport Transfers:</span>
+                                            <span className="font-medium">THB {costs.transfersCost.toLocaleString()}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-green-200">
+                                            <span className="text-gray-700">Tours Total:</span>
+                                            <span className="font-medium">THB {costs.toursCost.toLocaleString()}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-green-200">
+                                            <span className="text-gray-700">Hotels Total:</span>
+                                            <span className="font-medium">THB {costs.hotelsCost.toLocaleString()}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b-2 border-green-300 font-semibold">
+                                            <span className="text-gray-800">Subtotal:</span>
+                                            <span>THB {costs.subtotal.toLocaleString()}</span>
+                                        </div>
+                                        
+                                        <div className="flex justify-between items-center py-2 border-b border-green-200">
+                                            <span className="text-blue-600">Markup ({quotation.markup}%):</span>
+                                            <span className="font-medium text-blue-600">THB {costs.markupAmount.toLocaleString()}</span>
+                                        </div>
+                                        
+                                        <div className="bg-green-100 p-3 rounded-lg mt-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-lg font-bold text-green-800">FINAL AMOUNT:</span>
+                                                <span className="text-xl font-bold text-green-800">
+                                                    {currencySymbol}{costs.finalAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                                                </span>
+                                            </div>
+                                            {quotation.currency !== 'THB' && (
+                                                <div className="text-sm text-green-700 mt-1">
+                                                    Exchange Rate: 1 {quotation.currency} = {quotation.exchangeRates[quotation.currency]} THB
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Summary Notes */}
+                        <div className="mb-8">
+                            <h2 className="text-xl font-semibold text-gray-800 mb-4">Additional Notes</h2>
+                            <textarea
+                                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                rows="4"
+                                value={quotation.summary}
+                                onChange={(e) => setQuotation(prev => ({ ...prev, summary: e.target.value }))}
+                                placeholder="Add any additional notes, special requirements, or terms & conditions..."
+                            />
+                        </div>
+
+                        {/* Generate Button */}
+                        <div className="border-t pt-6">
+                            <div className="flex justify-center">
+                                <button
+                                    onClick={generateQuotation}
+                                    className="px-8 py-3 bg-gradient-to-r from-orange-500 to-yellow-500 text-white rounded-lg hover:from-orange-600 hover:to-yellow-600 flex items-center font-semibold text-lg shadow-lg transform transition hover:scale-105"
+                                >
+                                    <Download className="mr-2" size={20} />
+                                    Generate Professional Quotation
+                                </button>
+                            </div>
+                            
+                            <div className="text-center mt-4 text-sm text-gray-500">
+                                All prices in Thai Baht (THB) unless otherwise specified. Terms and conditions apply.
+                            </div>
+                        </div>
+
+                        {/* Generated Quotation Display */}
+                        {quotation.showQuotation && (
+                            <div className="mb-8 mt-8">
+                                <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                    <FileText className="mr-2 text-green-500" size={20} />
+                                    Generated Quotation
+                                </h2>
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold text-green-800">Professional Quotation Ready</h3>
+                                        <div className="space-x-2">
+                                            <button
+                                                onClick={() => navigator.clipboard.writeText(quotation.generatedQuotation)}
+                                                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm"
+                                            >
+                                                Copy to Clipboard
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    const blob = new Blob([quotation.generatedQuotation], { type: 'text/plain' });
+                                                    const url = URL.createObjectURL(blob);
+                                                    const a = document.createElement('a');
+                                                    a.href = url;
+                                                    a.download = `Quotation_${quotation.quotationNumber}.txt`;
+                                                    a.click();
+                                                }}
+                                                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm"
+                                            >
+                                                Download
+                                            </button>
+                                            <button
+                                                onClick={() => setQuotation(prev => ({ ...prev, showQuotation: false }))}
+                                                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
+                                            >
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <pre className="bg-white p-4 rounded border text-sm whitespace-pre-wrap font-mono max-h-96 overflow-y-auto">
+                                        {quotation.generatedQuotation}
+                                    </pre>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Render the component
+        ReactDOM.render(React.createElement(SunSeriesQuotationSystem), document.getElementById('root'));
+    </script>
+</body>
+</html>
