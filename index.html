@@ -274,12 +274,28 @@
             btn.textContent = 'Testing...';
             status.textContent = '';
             
-            const result = await makeAirtableRequest('Tours', { maxRecords: 1 });
+            // Try different possible table names
+            const tableNames = [
+                'Sun Series Group C...',
+                'Table 1',
+                'Tours',
+                'Main Table'
+            ];
             
-            if (result) {
-                status.innerHTML = '<span class="text-green-600">✅ Connection successful!</span>';
-            } else {
-                status.innerHTML = '<span class="text-red-600">❌ Connection failed</span>';
+            let success = false;
+            for (const tableName of tableNames) {
+                const result = await makeAirtableRequest(tableName, { maxRecords: 1 });
+                if (result) {
+                    status.innerHTML = `<span class="text-green-600">✅ Connection successful! Table: ${tableName}</span>`;
+                    // Store the working table name
+                    window.workingTableName = tableName;
+                    success = true;
+                    break;
+                }
+            }
+            
+            if (!success) {
+                status.innerHTML = '<span class="text-red-600">❌ Connection failed - Check API token and base ID</span>';
             }
             
             btn.disabled = false;
@@ -295,15 +311,16 @@
             spinner.style.display = 'inline-block';
             container.innerHTML = '<div class="col-span-full text-center text-gray-500">Loading tours...</div>';
             
-            // Load from your "Sun Series Group C..." table (the table name from your screenshot)
-            const result = await makeAirtableRequest('Sun Series Group C...', { 
+            // Use the working table name from test connection, or try common names
+            const tableName = window.workingTableName || 'Table 1';
+            const result = await makeAirtableRequest(tableName, { 
                 sort: [{ field: 'Code', direction: 'asc' }]
             });
             
             if (result && result.records) {
                 renderTours(result.records);
             } else {
-                container.innerHTML = '<div class="col-span-full text-center text-red-500">Failed to load tours. Check your API credentials.</div>';
+                container.innerHTML = '<div class="col-span-full text-center text-red-500">Failed to load tours. Check your API credentials and run Test Connection first.</div>';
             }
             
             btn.disabled = false;
@@ -347,24 +364,29 @@
                 const isSelected = window.appData.selectedTours.some(t => t.id === tour.id);
                 const price = getPriceForGroupSize(fields, window.appData.groupSize);
                 
+                // Get tour name from your field structure
+                const tourName = fields['Bangkok Tour list'] || fields['Phuket Tour list'] || fields['Tour_Name'] || 'Unknown Tour';
+                const tourCode = fields['Code'] || 'N/A';
+                const tourType = fields['Type'] || 'Tour';
+                const duration = fields['Duration'] || 'N/A';
+                
                 return `
                     <div class="border rounded-lg p-4 cursor-pointer transition-all ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300'}" 
                          onclick="toggleTour('${tour.id}', ${JSON.stringify(fields).replace(/"/g, '&quot;')})">
                         <div class="flex justify-between items-start mb-2">
-                            <div class="font-semibold text-gray-900">${fields.Tour_Code}</div>
+                            <div class="font-semibold text-gray-900">${tourCode}</div>
                             <div class="text-orange-600 font-bold">THB ${price.toLocaleString()}</div>
                         </div>
-                        <h3 class="font-medium text-gray-800 mb-2">${fields.Tour_Name}</h3>
+                        <h3 class="font-medium text-gray-800 mb-2">${tourName}</h3>
                         <div class="text-sm text-gray-600 mb-2">
                             <span class="inline-flex items-center mr-4">
-                                <span class="mr-1">📍</span> ${fields.Destination}
+                                <span class="mr-1">🎯</span> ${tourType}
                             </span>
                             <span class="inline-flex items-center">
-                                <span class="mr-1">⏰</span> ${fields.Duration}
+                                <span class="mr-1">⏰</span> ${duration}
                             </span>
                         </div>
-                        <div class="text-xs text-green-600 mb-2">✓ ${fields.Includes}</div>
-                        <div class="text-xs text-gray-500">
+                        <div class="text-xs text-gray-500 mb-2">
                             ${window.appData.groupSize} guest(s) × THB ${price.toLocaleString()} = THB ${(price * window.appData.groupSize).toLocaleString()}
                         </div>
                         ${isSelected ? '<div class="mt-2 text-xs font-medium text-orange-600">✓ Selected</div>' : ''}
@@ -408,12 +430,13 @@
         }
 
         function getPriceForGroupSize(tourFields, groupSize) {
-            if (groupSize === 1 && tourFields.Price_1_Person) return tourFields.Price_1_Person;
-            if (groupSize <= 3 && tourFields.Price_2_3_People) return tourFields.Price_2_3_People;
-            if (groupSize <= 6 && tourFields.Price_4_6_People) return tourFields.Price_4_6_People;
-            if (groupSize <= 9 && tourFields.Price_7_9_People) return tourFields.Price_7_9_People;
-            if (tourFields.Price_10_Plus) return tourFields.Price_10_Plus;
-            return tourFields.Price_1_Person || 0;
+            // Match your actual field names from the screenshot
+            if (groupSize === 1 && tourFields['Price per person : THB']) return tourFields['Price per person : THB'];
+            if (groupSize <= 3 && tourFields['Price per 2 - 3 Pax']) return tourFields['Price per 2 - 3 Pax'];
+            if (groupSize <= 6 && tourFields['Price per 4 - 6 Pax']) return tourFields['Price per 4 - 6 Pax'];
+            if (groupSize <= 9 && tourFields['Price per 7 - 9 Pax']) return tourFields['Price per 7 - 9 Pax'];
+            if (tourFields['Price per 10+ Pax']) return tourFields['Price per 10+ Pax'];
+            return tourFields['Price per person : THB'] || 0;
         }
 
         function toggleTour(tourId, tourFields) {
@@ -470,8 +493,8 @@
                     html += `
                         <div class="flex justify-between items-center py-2 border-b border-gray-200">
                             <div>
-                                <div class="font-medium">${tour.fields.Tour_Code}: ${tour.fields.Tour_Name}</div>
-                                <div class="text-sm text-gray-600">${tour.fields.Destination} • ${tour.fields.Duration}</div>
+                                <div class="font-medium">${tour.fields.Code}: ${tour.fields['Bangkok Tour list'] || tour.fields['Phuket Tour list'] || 'Tour'}</div>
+                                <div class="text-sm text-gray-600">${tour.fields.Type} • ${tour.fields.Duration}</div>
                             </div>
                             <div class="text-right">
                                 <div class="font-semibold">THB ${tourTotal.toLocaleString()}</div>
