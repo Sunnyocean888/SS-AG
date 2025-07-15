@@ -8,10 +8,11 @@
     <style>
         .hidden { display: none; }
         .show { display: block; }
+        .selected-tour { background-color: #fef3c7; border-color: #f59e0b; }
     </style>
 </head>
 <body class="bg-gradient-to-br from-orange-50 to-yellow-50 min-h-screen">
-    <div class="max-w-6xl mx-auto p-6">
+    <div class="max-w-7xl mx-auto p-6">
         <div class="bg-white rounded-xl shadow-lg p-8">
             <!-- Header -->
             <div class="text-center mb-8">
@@ -46,7 +47,7 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Number of Guests</label>
-                        <input type="number" id="group-size" value="1" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        <input type="number" id="group-size" value="2" min="1" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-transparent">
                     </div>
                 </div>
                 <div class="mt-4">
@@ -95,66 +96,11 @@
                 <button onclick="addDestination()" class="px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 text-sm">+ Add Destination</button>
             </div>
 
-            <!-- Tours -->
+            <!-- Day-by-Day Tour Selection -->
             <div class="mb-8">
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">🎯 Popular Tours</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="tours-container">
-                    <!-- Bangkok Tours -->
-                    <div class="tour-item p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-orange-300" data-code="BKK-001" data-price="4450">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <h4 class="font-medium text-gray-900 text-sm">BKK-001: Floating Market & Railway Market</h4>
-                                <p class="text-xs text-gray-600 mt-1">Duration: 10 hours</p>
-                                <p class="text-xs text-green-600 mt-1">✓ Guide, transportation, lunch, entrance fees</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-orange-600 font-semibold text-sm">THB 4,450/person</div>
-                                <div class="text-xs text-gray-500">for 2-3 guests</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tour-item p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-orange-300" data-code="BKK-002" data-price="6450">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <h4 class="font-medium text-gray-900 text-sm">BKK-002: Safari World & Dinner Cruise</h4>
-                                <p class="text-xs text-gray-600 mt-1">Duration: 10 hours</p>
-                                <p class="text-xs text-green-600 mt-1">✓ Guide, transportation, lunch, dinner cruise</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-orange-600 font-semibold text-sm">THB 6,450/person</div>
-                                <div class="text-xs text-gray-500">for 2-3 guests</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tour-item p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-orange-300" data-code="HKT-001" data-price="2700">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <h4 class="font-medium text-gray-900 text-sm">HKT-001: Phi Phi Island Tour</h4>
-                                <p class="text-xs text-gray-600 mt-1">Duration: 7 hours</p>
-                                <p class="text-xs text-green-600 mt-1">✓ Speed boat, guide, lunch, snorkeling</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-orange-600 font-semibold text-sm">THB 2,700/person</div>
-                                <div class="text-xs text-gray-500">for 2-3 guests</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tour-item p-4 border border-gray-200 rounded-lg cursor-pointer hover:border-orange-300" data-code="CNX-001" data-price="3155">
-                        <div class="flex justify-between items-start">
-                            <div class="flex-1">
-                                <h4 class="font-medium text-gray-900 text-sm">CNX-001: Doi Inthanon & Hill Tribe</h4>
-                                <p class="text-xs text-gray-600 mt-1">Duration: 9 hours</p>
-                                <p class="text-xs text-green-600 mt-1">✓ Guide, transportation, lunch, entrance fees</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-orange-600 font-semibold text-sm">THB 3,155/person</div>
-                                <div class="text-xs text-gray-500">for 2 guests</div>
-                            </div>
-                        </div>
-                    </div>
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">🎯 Day-by-Day Tour Selection</h2>
+                <div id="daily-tours-container">
+                    <p class="text-gray-500 text-center py-8">Set your travel dates and destinations to see daily tour options</p>
                 </div>
             </div>
 
@@ -286,6 +232,43 @@
     </div>
 
     <script>
+        // Tour data from your spreadsheet
+        const tourData = {
+            Bangkok: [
+                { code: 'BKK-001', name: 'Damnoen Saduak Floating Market & Maeklong Railway Market Tour', duration: '10 hours', prices: { '1': 8700, '2-3': 4450, '4-6': 2325, '7-9': 1414 }, includes: 'Guide, transportation, lunch, entrance fees' },
+                { code: 'BKK-002', name: 'Safari World & Marine Park with Lunch + Dinner Cruise', duration: '10 hours', prices: { '1': 10700, '2-3': 6450, '4-6': 4325, '7-9': 3414 }, includes: 'Guide, transportation, lunch, dinner cruise, entrance fees' },
+                { code: 'BKK-003', name: 'Temple tour (Grand Palace + Emerald Buddha & Reclining Buddha)', duration: '10 hours', prices: { '1': 8550, '2-3': 5050, '4-6': 3300, '7-9': 2550 }, includes: 'Guide, transportation, entrance fees' },
+                { code: 'BKK-004', name: 'Ayutthaya Ancient Capital Day Trip', duration: '9 hours', prices: { '1': 7800, '2-3': 4200, '4-6': 2800, '7-9': 2100 }, includes: 'Guide, transportation, lunch, entrance fees' },
+                { code: 'BKK-005', name: 'Chatuchak Weekend Market & Jim Thompson House', duration: '6 hours', prices: { '1': 5500, '2-3': 3200, '4-6': 2100, '7-9': 1650 }, includes: 'Guide, transportation, entrance fees' },
+                { code: 'BKK-006', name: 'Kanchanaburi Bridge over River Kwai & War Museum', duration: '12 hours', prices: { '1': 9500, '2-3': 5200, '4-6': 3400, '7-9': 2650 }, includes: 'Guide, transportation, lunch, entrance fees' },
+                { code: 'BKK-007', name: 'Khao Yai National Park Day Trip', duration: '12 hours', prices: { '1': 8900, '2-3': 4800, '4-6': 3200, '7-9': 2450 }, includes: 'Guide, transportation, lunch, entrance fees' }
+            ],
+            Phuket: [
+                { code: 'HKT-001', name: 'Phi Phi Island Tour (Join Speed Boat) includes lunch', duration: '7 hours', prices: { '1': 3700, '2-3': 2700, '4-6': 2200, '7-9': 1986 }, includes: 'Speed boat, guide, lunch, snorkeling equipment' },
+                { code: 'HKT-002', name: 'Phang Nga Bay Tour + Canoeing at Hong and Panak Islands', duration: '7 hours', prices: { '1': 3700, '2-3': 2700, '4-6': 2200, '7-9': 1986 }, includes: 'Long tail boat, guide, lunch, canoeing equipment' },
+                { code: 'HKT-003', name: 'James Bond Island & Koh Panyee by Long Tail Boat', duration: '8 hours', prices: { '1': 4200, '2-3': 3100, '4-6': 2500, '7-9': 2200 }, includes: 'Long tail boat, guide, lunch, entrance fees' },
+                { code: 'HKT-004', name: 'Patong Beach & Big Buddha Half Day Tour', duration: '4 hours', prices: { '1': 2800, '2-3': 1900, '4-6': 1400, '7-9': 1200 }, includes: 'Transportation, guide' },
+                { code: 'HKT-005', name: 'Similan Islands Day Trip (Speedboat)', duration: '8 hours', prices: { '1': 4500, '2-3': 3200, '4-6': 2650, '7-9': 2300 }, includes: 'Speedboat, guide, lunch, snorkeling equipment' },
+                { code: 'HKT-006', name: 'Coral Island (Koh Hae) Half Day Tour', duration: '4 hours', prices: { '1': 2200, '2-3': 1600, '4-6': 1200, '7-9': 1000 }, includes: 'Speedboat, guide, water sports' }
+            ],
+            'Chiang Mai': [
+                { code: 'CNX-001', name: 'Doi Inthanon National Park + Red Karen Hill tribe + Lunch', duration: '9 hours', prices: { '1': 5670, '2': 3155, '3-6': 2675, '7-9': 2140 }, includes: 'Guide, transportation, lunch, entrance fees' },
+                { code: 'CNX-002', name: 'Elephant Sanctuary & Doi Suthep Temple', duration: '8 hours', prices: { '1': 6200, '2': 3800, '3-6': 3100, '7-9': 2650 }, includes: 'Guide, transportation, lunch, elephant feeding' },
+                { code: 'CNX-003', name: 'Chiang Mai Old City & Night Bazaar Walking Tour', duration: '6 hours', prices: { '1': 3800, '2': 2200, '3-6': 1800, '7-9': 1500 }, includes: 'Guide, transportation' },
+                { code: 'CNX-004', name: 'White Temple (Wat Rong Khun) & Blue Temple Day Trip', duration: '10 hours', prices: { '1': 6800, '2': 4200, '3-6': 3400, '7-9': 2850 }, includes: 'Guide, transportation, lunch, entrance fees' },
+                { code: 'CNX-005', name: 'Mae Taeng River Rafting & Jungle Trek', duration: '8 hours', prices: { '1': 5200, '2': 3200, '3-6': 2650, '7-9': 2200 }, includes: 'Guide, transportation, lunch, rafting equipment' }
+            ],
+            Krabi: [
+                { code: 'KBV-001', name: 'Half day City Tour no lunch (private)', duration: '4.5 hours', prices: { '1': 4095, '2': 2250, '3-7': 1680, '8+': 1200 }, includes: 'Private guide, transportation' },
+                { code: 'KBV-002', name: '4 Islands Tour by Long Tail Boat', duration: '7 hours', prices: { '1': 4500, '2': 2800, '3-7': 2200, '8+': 1900 }, includes: 'Long tail boat, guide, lunch, snorkeling equipment' },
+                { code: 'KBV-003', name: 'Emerald Pool & Hot Springs Natural Tour', duration: '6 hours', prices: { '1': 3800, '2': 2400, '3-7': 1900, '8+': 1600 }, includes: 'Guide, transportation, entrance fees' },
+                { code: 'KBV-004', name: 'Railay Beach & Phra Nang Cave', duration: '5 hours', prices: { '1': 3200, '2': 2000, '3-7': 1650, '8+': 1400 }, includes: 'Long tail boat, guide' },
+                { code: 'KBV-005', name: 'Tiger Cave Temple & Krabi Town Tour', duration: '6 hours', prices: { '1': 2800, '2': 1800, '3-7': 1450, '8+': 1250 }, includes: 'Guide, transportation, entrance fees' }
+            ]
+        };
+
+        let selectedTours = {};
+
         // Initialize the page
         document.addEventListener('DOMContentLoaded', function() {
             initializePage();
@@ -308,7 +291,10 @@
 
         function setupEventListeners() {
             // Add event listeners for automatic calculation
-            document.getElementById('group-size').addEventListener('input', calculateCosts);
+            document.getElementById('group-size').addEventListener('input', function() {
+                generateDailyTours();
+                calculateCosts();
+            });
             document.getElementById('markup').addEventListener('input', function() {
                 document.getElementById('markup-percent').textContent = this.value;
                 calculateCosts();
@@ -316,19 +302,21 @@
             document.getElementById('currency').addEventListener('change', updateExchangeRate);
             document.getElementById('exchange-rate').addEventListener('input', calculateCosts);
             
-            // Tour selection
-            document.querySelectorAll('.tour-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    this.classList.toggle('bg-orange-50');
-                    this.classList.toggle('border-orange-500');
-                    calculateCosts();
+            // Date and destination calculation
+            document.getElementById('start-date').addEventListener('change', function() {
+                calculateEndDate();
+                generateDailyTours();
+            });
+            
+            document.querySelectorAll('.nights-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    calculateEndDate();
+                    generateDailyTours();
                 });
             });
 
-            // Date calculation
-            document.getElementById('start-date').addEventListener('change', calculateEndDate);
-            document.querySelectorAll('.nights-input').forEach(input => {
-                input.addEventListener('input', calculateEndDate);
+            document.querySelectorAll('.destination-select').forEach(select => {
+                select.addEventListener('change', generateDailyTours);
             });
         }
 
@@ -349,6 +337,127 @@
             document.getElementById('end-date').value = endDate.toISOString().split('T')[0];
         }
 
+        function generateDailyTours() {
+            const startDate = document.getElementById('start-date').value;
+            const destinations = Array.from(document.querySelectorAll('.destination-item'));
+            const container = document.getElementById('daily-tours-container');
+            
+            if (!startDate || destinations.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Set your travel dates and destinations to see daily tour options</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            let currentDate = new Date(startDate);
+            let dayNumber = 1;
+
+            destinations.forEach((destElement, destIndex) => {
+                const destination = destElement.querySelector('.destination-select').value;
+                const nights = parseInt(destElement.querySelector('.nights-input').value) || 1;
+                const destinationTours = tourData[destination] || [];
+
+                // Create destination header
+                const destHeader = document.createElement('div');
+                destHeader.className = 'mb-6';
+                destHeader.innerHTML = `
+                    <h3 class="text-lg font-medium text-gray-800 mb-3 bg-orange-100 p-3 rounded-lg">
+                        📍 ${destination} - ${nights} nights
+                    </h3>
+                `;
+                container.appendChild(destHeader);
+
+                // Create daily sections for this destination
+                for (let day = 0; day < nights; day++) {
+                    const dayDate = new Date(currentDate);
+                    dayDate.setDate(dayDate.getDate() + day);
+                    const dateString = dayDate.toISOString().split('T')[0];
+                    const dayKey = `${destination}-day-${dayNumber}`;
+
+                    const daySection = document.createElement('div');
+                    daySection.className = 'mb-6 border border-gray-200 rounded-lg p-4';
+                    daySection.innerHTML = `
+                        <h4 class="font-medium text-gray-800 mb-3 bg-gray-100 p-2 rounded flex items-center">
+                            🗓️ Day ${dayNumber} - ${dayDate.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </h4>
+                        <div class="grid grid-cols-1 gap-3" id="tours-day-${dayNumber}">
+                            ${destinationTours.map(tour => {
+                                const groupSize = parseInt(document.getElementById('group-size').value) || 2;
+                                const price = getPriceForGroupSize(tour.prices, groupSize);
+                                const tourKey = `${tour.code}-${dateString}`;
+                                const isSelected = selectedTours[tourKey] ? 'selected-tour' : '';
+                                
+                                return `
+                                    <div class="tour-item p-3 border rounded-lg cursor-pointer transition-all hover:border-orange-300 ${isSelected}" 
+                                         data-tour-key="${tourKey}" 
+                                         data-code="${tour.code}"
+                                         data-price="${price}"
+                                         data-destination="${destination}"
+                                         data-date="${dateString}"
+                                         onclick="toggleTour('${tourKey}', '${tour.code}', ${price}, '${destination}', '${dateString}', '${tour.name}', '${tour.duration}', '${tour.includes}')">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1">
+                                                <div class="font-medium text-gray-900 text-sm">${tour.code}: ${tour.name}</div>
+                                                <div class="text-xs text-gray-600 mt-1">
+                                                    <span class="inline-flex items-center mr-3">
+                                                        ⏱️ ${tour.duration}
+                                                    </span>
+                                                </div>
+                                                <div class="text-xs text-green-600 mt-1">✓ ${tour.includes}</div>
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-orange-600 font-semibold text-sm">THB ${price.toLocaleString()}/person</div>
+                                                <div class="text-xs text-gray-500">${groupSize} guest(s)</div>
+                                                <div class="text-xs font-medium text-orange-700 mt-1">
+                                                    Total: THB ${(price * groupSize).toLocaleString()}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    `;
+                    container.appendChild(daySection);
+                    dayNumber++;
+                }
+
+                // Move current date forward by the number of nights
+                currentDate.setDate(currentDate.getDate() + nights);
+            });
+        }
+
+        function getPriceForGroupSize(prices, groupSize) {
+            if (groupSize === 1) return prices['1'] || 0;
+            if (groupSize <= 3) return prices['2-3'] || prices['2'] || 0;
+            if (groupSize <= 6) return prices['4-6'] || prices['3-6'] || prices['3-7'] || 0;
+            if (groupSize <= 9) return prices['7-9'] || 0;
+            return prices['10-14'] || prices['8+'] || 0;
+        }
+
+        function toggleTour(tourKey, code, price, destination, date, name, duration, includes) {
+            const tourElement = document.querySelector(`[data-tour-key="${tourKey}"]`);
+            
+            if (selectedTours[tourKey]) {
+                // Deselect tour
+                delete selectedTours[tourKey];
+                tourElement.classList.remove('selected-tour');
+            } else {
+                // Select tour
+                selectedTours[tourKey] = {
+                    code: code,
+                    name: name,
+                    duration: duration,
+                    includes: includes,
+                    price: price,
+                    destination: destination,
+                    date: date
+                };
+                tourElement.classList.add('selected-tour');
+            }
+            
+            calculateCosts();
+        }
+
         function calculateCosts() {
             const groupSize = parseInt(document.getElementById('group-size').value) || 1;
             const markup = parseFloat(document.getElementById('markup').value) || 0;
@@ -360,11 +469,9 @@
             const transfersCost = destinations * 2 * 1500; // 2 transfers per destination
             
             // Calculate tours cost
-            const selectedTours = document.querySelectorAll('.tour-item.bg-orange-50');
             let toursCost = 0;
-            selectedTours.forEach(tour => {
-                const price = parseInt(tour.dataset.price);
-                toursCost += price * groupSize;
+            Object.values(selectedTours).forEach(tour => {
+                toursCost += tour.price * groupSize;
             });
             
             // Calculate hotels cost
@@ -372,7 +479,8 @@
             let hotelsCost = 0;
             hotels.forEach((hotel, index) => {
                 const rate = parseInt(hotel.querySelector('.hotel-rate').value) || 0;
-                const nights = parseInt(document.querySelectorAll('.nights-input')[0]?.value) || 3; // Default to first destination nights
+                const destinationElement = document.querySelectorAll('.destination-item')[index];
+                const nights = destinationElement ? parseInt(destinationElement.querySelector('.nights-input').value) || 3 : 3;
                 hotelsCost += rate * nights;
             });
             
@@ -382,7 +490,7 @@
             const finalAmount = totalWithMarkup / exchangeRate;
             
             // Update display
-            const currencySymbol = currency === 'USD' ? '$' : currency === 'HKD' ? 'HK$' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : 'THB ';
+            const currencySymbol = currency === 'USD' ? ' : currency === 'HKD' ? 'HK : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : 'THB ';
             
             document.getElementById('transfers-cost').textContent = `THB ${transfersCost.toLocaleString()}`;
             document.getElementById('tours-cost').textContent = `THB ${toursCost.toLocaleString()}`;
@@ -419,14 +527,21 @@
             `;
             container.appendChild(newDestination);
             
-            // Add event listener for new nights input
-            newDestination.querySelector('.nights-input').addEventListener('input', calculateEndDate);
-            calculateCosts();
+            // Add event listeners
+            newDestination.querySelector('.nights-input').addEventListener('input', function() {
+                calculateEndDate();
+                generateDailyTours();
+            });
+            newDestination.querySelector('.destination-select').addEventListener('change', generateDailyTours);
+            
+            calculateEndDate();
+            generateDailyTours();
         }
 
         function removeDestination(button) {
             button.closest('.destination-item').remove();
-            calculateCosts();
+            calculateEndDate();
+            generateDailyTours();
         }
 
         function addHotel() {
@@ -486,17 +601,11 @@
             const validUntil = document.getElementById('valid-until').textContent;
             const summaryNotes = document.getElementById('summary-notes').value;
             
-            // Get selected tours
-            const selectedTours = Array.from(document.querySelectorAll('.tour-item.bg-orange-50')).map(tour => {
-                const title = tour.querySelector('h4').textContent;
-                const duration = tour.querySelector('.text-xs').textContent;
-                return `• ${title}\n  ${duration}`;
-            });
-            
             // Get destinations
-            const destinations = Array.from(document.querySelectorAll('.destination-select')).map((select, index) => {
-                const nights = document.querySelectorAll('.nights-input')[index].value;
-                return `${select.value} (${nights} nights)`;
+            const destinations = Array.from(document.querySelectorAll('.destination-item')).map((item, index) => {
+                const destination = item.querySelector('.destination-select').value;
+                const nights = item.querySelector('.nights-input').value;
+                return { name: destination, nights: parseInt(nights) };
             });
             
             // Get hotels
@@ -515,6 +624,60 @@
             const markupCost = document.getElementById('markup-cost').textContent;
             const finalAmount = document.getElementById('final-amount').textContent;
             const markup = document.getElementById('markup').value;
+            
+            // Generate day-by-day itinerary
+            let itinerary = '';
+            let dayCounter = 1;
+            let currentDate = new Date(startDate);
+            
+            destinations.forEach((destination, destIndex) => {
+                itinerary += `\n${destination.name.toUpperCase()} (${destination.nights} nights)\n`;
+                itinerary += '='.repeat(destination.name.length + 12) + '\n';
+                
+                for (let day = 0; day < destination.nights; day++) {
+                    const dayDate = new Date(currentDate);
+                    dayDate.setDate(dayDate.getDate() + day);
+                    const dateString = dayDate.toISOString().split('T')[0];
+                    
+                    itinerary += `\nDay ${dayCounter} - ${dayDate.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}\n`;
+                    itinerary += '-'.repeat(50) + '\n';
+                    
+                    // Add arrival transfer for first day
+                    if (day === 0) {
+                        itinerary += `• Airport transfer from ${destination.name} Airport to Hotel\n`;
+                    }
+                    
+                    // Add hotel accommodation
+                    const destHotel = hotels.find(h => h.includes(destination.name));
+                    if (destHotel) {
+                        itinerary += `• Accommodation: Hotel in ${destination.name}\n`;
+                    }
+                    
+                    // Add selected tours for this day
+                    const dayTours = Object.values(selectedTours).filter(tour => 
+                        tour.destination === destination.name && tour.date === dateString
+                    );
+                    
+                    if (dayTours.length > 0) {
+                        dayTours.forEach(tour => {
+                            itinerary += `• Tour: ${tour.code} - ${tour.name}\n`;
+                            itinerary += `  Duration: ${tour.duration}\n`;
+                            itinerary += `  Includes: ${tour.includes}\n`;
+                        });
+                    } else {
+                        itinerary += '• Free Day / Leisure time\n';
+                    }
+                    
+                    // Add departure transfer for last day
+                    if (day === destination.nights - 1) {
+                        itinerary += `• Transfer-out to ${destination.name} Airport\n`;
+                    }
+                    
+                    dayCounter++;
+                }
+                
+                currentDate.setDate(currentDate.getDate() + destination.nights);
+            });
             
             // Generate quotation text
             const quotationText = `
@@ -537,15 +700,20 @@ TOUR DETAILS:
 =============
 Group Size: ${groupSize} guest(s)
 Travel Period: ${startDate} to ${endDate}
-Destinations: ${destinations.join(', ')}
+Total Duration: ${destinations.reduce((sum, dest) => sum + dest.nights, 0)} nights / ${destinations.reduce((sum, dest) => sum + dest.nights, 0) + 1} days
 
-SELECTED TOURS:
-===============
-${selectedTours.length > 0 ? selectedTours.join('\n\n') : 'No tours selected'}
+DAY-BY-DAY ITINERARY:
+=====================${itinerary}
 
-ACCOMMODATION:
-==============
-${hotels.length > 0 ? hotels.join('\n') : 'No hotels specified'}
+SELECTED TOURS SUMMARY:
+======================
+${Object.values(selectedTours).map(tour => 
+    `• ${tour.code}: ${tour.name} (${tour.duration}) - THB ${tour.price.toLocaleString()}/person`
+).join('\n') || 'No tours selected'}
+
+ACCOMMODATION DETAILS:
+=====================
+${hotels.join('\n') || 'No hotels specified'}
 
 COST BREAKDOWN:
 ===============
