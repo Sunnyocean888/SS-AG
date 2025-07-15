@@ -66,7 +66,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Airtable Base ID</label>
-                        <input type="text" id="baseId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="app...">
+                        <input type="text" id="baseId" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" placeholder="app..." value="appe4FALoSFihKEyl">
                         <p class="text-xs text-gray-500 mt-1">Find at airtable.com/api</p>
                     </div>
                     <div>
@@ -75,11 +75,23 @@
                         <p class="text-xs text-gray-500 mt-1">Create at airtable.com/create/tokens</p>
                     </div>
                 </div>
+                
+                <!-- Token Setup Instructions -->
+                <div class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <h3 class="font-semibold text-yellow-800 mb-2">📋 Token Setup Checklist:</h3>
+                    <ul class="text-sm text-yellow-700 space-y-1">
+                        <li>✅ Go to <a href="https://airtable.com/create/tokens" target="_blank" class="underline">airtable.com/create/tokens</a></li>
+                        <li>✅ Create token with scopes: <code>data.records:read</code> and <code>schema.bases:read</code></li>
+                        <li>✅ Add your base <code>appe4FALoSFihKEyl</code> to token access</li>
+                        <li>✅ Copy the token (starts with <code>pat...</code>)</li>
+                    </ul>
+                </div>
+                
                 <div class="mt-4">
                     <button onclick="testConnection()" id="testBtn" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 text-sm">
                         Test Connection
                     </button>
-                    <span id="connectionStatus" class="ml-3 text-sm"></span>
+                    <div id="connectionStatus" class="ml-3 mt-2"></div>
                 </div>
             </div>
 
@@ -280,30 +292,48 @@
             
             btn.disabled = true;
             btn.textContent = 'Testing...';
-            status.textContent = '';
+            status.innerHTML = '<div class="text-blue-600">Testing connection...</div>';
             
-            // Try different possible table names
-            const tableNames = [
-                'Sun Series Group C...',
-                'Table 1',
-                'Tours',
-                'Main Table'
-            ];
+            const baseId = document.getElementById('baseId').value;
+            const apiKey = document.getElementById('apiKey').value;
             
-            let success = false;
-            for (const tableName of tableNames) {
-                const result = await makeAirtableRequest(tableName, { maxRecords: 1 });
-                if (result) {
-                    status.innerHTML = `<span class="text-green-600">✅ Connection successful! Table: ${tableName}</span>`;
-                    // Store the working table name
-                    window.workingTableName = tableName;
-                    success = true;
-                    break;
+            // First, let's test if we can reach Airtable at all
+            try {
+                // Test basic API access by getting base schema
+                const schemaUrl = `https://api.airtable.com/v0/meta/bases/${baseId}/tables`;
+                const schemaResponse = await fetch(schemaUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (schemaResponse.ok) {
+                    const schema = await schemaResponse.json();
+                    status.innerHTML = `<div class="text-green-600">✅ API access successful!</div>`;
+                    
+                    // Show available tables
+                    if (schema.tables && schema.tables.length > 0) {
+                        const tableList = schema.tables.map(table => `"${table.name}"`).join(', ');
+                        status.innerHTML += `<div class="text-sm text-gray-600 mt-2">Available tables: ${tableList}</div>`;
+                        
+                        // Store the first table name for loading tours
+                        window.workingTableName = schema.tables[0].name;
+                        status.innerHTML += `<div class="text-sm text-blue-600 mt-1">Will use table: "${window.workingTableName}" for loading tours</div>`;
+                    }
+                } else {
+                    const errorText = await schemaResponse.text();
+                    status.innerHTML = `<div class="text-red-600">❌ API Error ${schemaResponse.status}: ${schemaResponse.statusText}</div>`;
+                    if (schemaResponse.status === 403) {
+                        status.innerHTML += `<div class="text-sm text-red-600 mt-2">Permission denied. Please check:<br>
+                        1. API token has 'schema.bases:read' scope<br>
+                        2. Token has access to base ${baseId}<br>
+                        3. Token is not expired</div>`;
+                    }
                 }
-            }
-            
-            if (!success) {
-                status.innerHTML = '<span class="text-red-600">❌ Connection failed - Check API token and base ID</span>';
+            } catch (error) {
+                status.innerHTML = `<div class="text-red-600">❌ Network error: ${error.message}</div>`;
+                status.innerHTML += `<div class="text-sm text-gray-600 mt-2">Check your internet connection and API credentials</div>`;
             }
             
             btn.disabled = false;
