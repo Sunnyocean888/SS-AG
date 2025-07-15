@@ -349,16 +349,45 @@
             spinner.style.display = 'inline-block';
             container.innerHTML = '<div class="col-span-full text-center text-gray-500">Loading tours...</div>';
             
-            // Use the working table name from test connection, or try common names
-            const tableName = window.workingTableName || 'Table 1';
-            const result = await makeAirtableRequest(tableName, { 
-                sort: [{ field: 'Code', direction: 'asc' }]
-            });
+            // Check if we have a working table name from the connection test
+            if (!window.workingTableName) {
+                container.innerHTML = '<div class="col-span-full text-center text-red-500">Please run "Test Connection" first to identify the correct table.</div>';
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                return;
+            }
             
-            if (result && result.records) {
-                renderTours(result.records);
-            } else {
-                container.innerHTML = '<div class="col-span-full text-center text-red-500">Failed to load tours. Check your API credentials and run Test Connection first.</div>';
+            try {
+                // Use the working table name from test connection
+                const result = await makeAirtableRequest(window.workingTableName, { 
+                    maxRecords: 50 // Get more records to see the data
+                });
+                
+                if (result && result.records && result.records.length > 0) {
+                    // Debug: Show the first record structure
+                    console.log('First record structure:', result.records[0]);
+                    
+                    // Check if records have the expected fields
+                    const firstRecord = result.records[0].fields;
+                    const hasExpectedFields = firstRecord.Code || firstRecord['Price per person : THB'] || firstRecord['Bangkok Tour list'] || firstRecord['Phuket Tour list'];
+                    
+                    if (hasExpectedFields) {
+                        renderTours(result.records);
+                        container.innerHTML = `<div class="col-span-full text-green-600 text-center mb-4">✅ Loaded ${result.records.length} tours from table "${window.workingTableName}"</div>` + container.innerHTML;
+                    } else {
+                        // Show available field names for debugging
+                        const fieldNames = Object.keys(firstRecord).join(', ');
+                        container.innerHTML = `<div class="col-span-full text-yellow-600 text-center">
+                            <p>Table "${window.workingTableName}" found but field names don't match.</p>
+                            <p class="text-sm mt-2">Available fields: ${fieldNames}</p>
+                            <p class="text-sm mt-2">Expected fields: Code, Bangkok Tour list, Phuket Tour list, Price per person : THB</p>
+                        </div>`;
+                    }
+                } else {
+                    container.innerHTML = `<div class="col-span-full text-center text-yellow-500">Table "${window.workingTableName}" is empty or has no records.</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="col-span-full text-center text-red-500">Error loading tours: ${error.message}</div>`;
             }
             
             btn.disabled = false;
@@ -402,11 +431,22 @@
                 const isSelected = window.appData.selectedTours.some(t => t.id === tour.id);
                 const price = getPriceForGroupSize(fields, window.appData.groupSize);
                 
-                // Get tour name from your field structure
-                const tourName = fields['Bangkok Tour list'] || fields['Phuket Tour list'] || fields['Tour_Name'] || 'Unknown Tour';
-                const tourCode = fields['Code'] || 'N/A';
-                const tourType = fields['Type'] || 'Tour';
-                const duration = fields['Duration'] || 'N/A';
+                // Get tour name from your field structure - try multiple possible field names
+                const tourName = fields['Bangkok Tour list'] || 
+                               fields['Phuket Tour list'] || 
+                               fields['Tour_Name'] || 
+                               fields['Name'] || 
+                               fields['Tour Name'] ||
+                               'Unknown Tour';
+                
+                const tourCode = fields['Code'] || fields['Tour_Code'] || fields['ID'] || 'N/A';
+                const tourType = fields['Type'] || fields['Category'] || 'Tour';
+                const duration = fields['Duration'] || fields['Time'] || 'N/A';
+                
+                // Skip if price is 0 or undefined
+                if (!price || price === 0) {
+                    return '';
+                }
                 
                 return `
                     <div class="border rounded-lg p-4 cursor-pointer transition-all ${isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-orange-300'}" 
